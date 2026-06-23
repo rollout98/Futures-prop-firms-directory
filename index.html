@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROPGRID — Futures Prop Firm Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F8F6F1; --surface:#FFFFFF;
+  --ink:#0B1A30; --ink-soft:#2A3550; --muted:#5C6678; --faint:#8A93A4;
+  --line:#E7E1D4; --line2:#F1ECE1;
+  --gold:#C8922A; --gold-deep:#8A6310; --gold-bg:#FBEED0;
+  --on:#1F7A52; --on-bg:#E3F0E8; --on-soft:#5C9B80;
+  --warn:#7A5600; --warn-bg:#FBEED0;
+  --caution:#B23C12; --caution-bg:#FBE9E1;
+  --navy-tint:#E9ECF2; --off:#E0DCD0;
+  --shadow:0 1px 2px rgba(11,26,48,.05),0 6px 20px rgba(11,26,48,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.5;font-size:15px;-webkit-font-smoothing:antialiased}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ---------- header (the brand frame) ---------- */
+header{background:linear-gradient(160deg,#0B1A30 0%,#0F2240 55%,#162D52 100%);color:#fff;padding:30px 0 26px;position:relative;overflow:hidden}
+header .inner{max-width:1280px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.bg-grid{position:absolute;inset:0;z-index:0;opacity:.6;background-image:linear-gradient(rgba(242,201,110,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(242,201,110,.06) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(180deg,#000,transparent 88%)}
+.star{position:absolute;right:2%;top:-2.6rem;font-family:'Cormorant Garamond',serif;font-size:17rem;line-height:1;color:rgba(242,201,110,.05);z-index:0;pointer-events:none;user-select:none}
+.wordmark{font-family:'Cinzel',serif;font-weight:700;font-size:13px;letter-spacing:.3em;color:#fff;display:flex;align-items:center;gap:11px;animation:riseIn .6s ease both}
+.wordmark .dot{display:inline-flex;gap:3px}
+.wordmark .dot i{width:7px;height:7px;border-radius:1px;background:rgba(255,255,255,.28)}
+.wordmark .dot i:nth-child(1),.wordmark .dot i:nth-child(3),.wordmark .dot i:nth-child(5){background:#4ADE9E}
+h1{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(30px,5vw,52px);letter-spacing:-.01em;margin:16px 0 8px;line-height:1.04;animation:riseIn .6s ease both;animation-delay:.04s}
+h1 em{font-style:italic;color:#F2C96E}
+.tag{color:#AEB7C7;font-size:16px;max-width:62ch;line-height:1.6;animation:riseIn .6s ease both;animation-delay:.09s}
+.tag b{color:#F2C96E;font-weight:600}
+.stats{display:flex;gap:40px;flex-wrap:wrap;margin-top:22px;animation:riseIn .6s ease both;animation-delay:.15s}
+.stat .num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.01em}
+.stat .num.on{color:#4ADE9E}
+.stat .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8C97A8;margin-top:3px;font-weight:600}
+
+/* ---------- toolbar ---------- */
+.toolbar{position:sticky;top:0;z-index:20;background:rgba(248,246,241,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:13px 0}
+.toolbar .inner{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:11px}
+.row1{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{flex:1;min-width:200px;position:relative}
+.search input{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-family:inherit;font-size:14.5px;color:var(--ink)}
+.search input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(11,26,48,.09)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+select{padding:11px 30px 11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A93A4' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 11px center;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);cursor:pointer;-webkit-appearance:none;appearance:none}
+select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(11,26,48,.09)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.chip{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--muted);cursor:pointer;user-select:none;transition:.13s;white-space:nowrap}
+.chip:hover{border-color:#D6CCB7;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.cc[aria-pressed="true"]{background:var(--on);border-color:var(--on)}
+.chip-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-right:2px;font-family:Inter}
+.reset{margin-left:auto;font-family:Inter;font-size:13px;color:var(--gold-deep);background:none;border:none;cursor:pointer;padding:6px 4px;font-weight:600}
+.reset:hover{text-decoration:underline}
+
+/* ---------- grid ---------- */
+main{max-width:1280px;margin:0 auto;padding:22px 24px 60px}
+.count-line{font-size:13px;color:var(--muted);margin-bottom:16px;font-family:'JetBrains Mono',monospace}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+
+/* ---------- card (the instrument) ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:17px 17px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:13px;transition:.16s}
+.card:hover{border-color:#DBD2C0;transform:translateY(-1px);box-shadow:0 2px 4px rgba(11,26,48,.05),0 12px 30px rgba(11,26,48,.10)}
+.card.dim{opacity:.5}
+.chead{display:flex;gap:12px;align-items:flex-start}
+.mono-badge{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;letter-spacing:-.01em}
+.cname{font-family:Inter,sans-serif;font-weight:700;font-size:16.5px;letter-spacing:-.01em;line-height:1.2;color:var(--ink)}
+.crep{display:inline-block;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:5px;text-transform:uppercase}
+.rep-est{background:var(--navy-tint);color:var(--ink-soft)}
+.rep-new{background:#F1ECE1;color:var(--muted)}
+.rep-caution{background:var(--caution-bg);color:var(--caution)}
+.cc-pill{margin-left:auto;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;padding:5px 9px;border-radius:7px;letter-spacing:.03em;display:flex;align-items:center;gap:5px;height:fit-content}
+.cc-yes{background:var(--on-bg);color:var(--on)}
+.cc-no{background:#F1ECE1;color:var(--faint)}
+.cc-pill .ico{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* connection strip — the signature, emerald-owned */
+.strip{display:flex;gap:4px}
+.strip .cell{flex:1;border:1px solid var(--line);border-radius:7px;padding:7px 2px 5px;text-align:center;background:#FCFBF8;position:relative;cursor:default}
+.strip .cell .k{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;color:var(--faint);letter-spacing:.02em}
+.strip .cell .v{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#BBC0AE;margin-top:2px;font-weight:600}
+.strip .cell.lit{background:var(--on-bg);border-color:#BFE0CF}
+.strip .cell.lit .k{color:var(--on)}
+.strip .cell.lit .v{color:var(--on-soft)}
+
+/* stat grid */
+.cstats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.cstat{background:var(--surface);padding:9px 11px}
+.cstat .l{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.cstat .d{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;margin-top:2px;color:var(--ink);line-height:1.25}
+.cstat .d.sm{font-size:12.5px}
+
+.ctags{display:flex;gap:6px;flex-wrap:wrap}
+.t{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:6px;background:#F2EEE6;color:var(--muted);font-weight:500}
+.offer{background:var(--gold-bg);color:var(--warn);font-weight:600;border:1px dashed #E6CF9A;display:inline-flex;gap:5px;align-items:center}
+.cfoot{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line2);padding-top:11px;margin-top:1px}
+.expand{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px}
+.expand svg{transition:.2s}
+.expand[aria-expanded="true"] svg{transform:rotate(180deg)}
+.rev{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;font-family:'JetBrains Mono',monospace}
+.rev:hover{color:var(--gold-deep)}
+.detail{display:none;font-size:13.5px;color:var(--muted);border-top:1px solid var(--line2);padding-top:12px;gap:10px;flex-direction:column}
+.detail.open{display:flex}
+.detail .drow .dl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:2px}
+.detail .drow .dv{color:var(--ink)}
+.detail .note{background:#FAF8F3;border-left:2px solid var(--gold);padding:8px 11px;border-radius:0 7px 7px 0;font-size:13px;line-height:1.5}
+.detail a.src{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold-deep);text-decoration:none;word-break:break-all}
+
+.empty{text-align:center;padding:70px 20px;color:var(--muted)}
+.empty .big{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;color:var(--ink);margin-bottom:6px}
+
+footer{border-top:1px solid var(--line);background:var(--surface);padding:26px 0 40px}
+footer .inner{max-width:1280px;margin:0 auto;padding:0 24px;font-size:12.5px;color:var(--faint);line-height:1.65}
+footer b{color:var(--muted)}
+.disclaim{background:var(--warn-bg);border:1px solid #ECD8A3;border-radius:10px;padding:12px 15px;color:var(--warn);font-size:13px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start}
+.disclaim svg{flex-shrink:0;margin-top:2px}
+
+@media(max-width:520px){
+  .grid{grid-template-columns:1fr}
+  .stats{gap:22px}
+  .cc-pill .txt{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
+
+/* ---------- tabs ---------- */
+.tabs{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;gap:2px;border-bottom:1px solid var(--line)}
+.tab{font-family:Inter,sans-serif;font-weight:600;font-size:14.5px;padding:15px 18px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+[hidden]{display:none!important}
+
+/* ---------- income model ---------- */
+.model-hero{max-width:1280px;margin:0 auto;padding:24px 24px 4px;display:flex;gap:13px;flex-wrap:wrap}
+.hero-num{background:var(--ink);color:#fff;border-radius:14px;padding:17px 21px;flex:1;min-width:210px}
+.hero-num.alt{background:var(--on)}
+.hero-num.dn{background:var(--caution)}
+.hero-num .hl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:600}
+.hero-num .hv{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(24px,3.8vw,34px);letter-spacing:-.02em;margin-top:5px}
+.hero-num .hs{font-size:12px;color:rgba(255,255,255,.72);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.model-note{max-width:1280px;margin:0 auto;padding:0 24px}
+.model-wrap{max-width:1280px;margin:0 auto;padding:16px 24px 60px;display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.panel h3{font-family:Inter,sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;font-weight:600}
+.grp+.grp{margin-top:15px;padding-top:16px;border-top:1px solid var(--line2)}
+.grp-h{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:13px}
+.dial{margin-bottom:15px}
+.dial:last-child{margin-bottom:0}
+.dial .dtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.dial .dname{font-size:13px;color:var(--ink);font-weight:500}
+.dial .dval{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--on)}
+.dial input[type=range]{width:100%;accent-color:var(--on);height:5px;cursor:pointer;margin:0}
+.dial .drange{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--faint);margin-top:3px}
+.derived{background:var(--caution-bg);border:1px solid #F0CDBE;border-radius:10px;padding:11px 13px;margin-top:14px}
+.derived .dr{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+.derived .dr+.dr{margin-top:7px}
+.derived .dr .k{color:#8A4A2E}
+.derived .dr .v{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--caution)}
+.model-main{display:flex;flex-direction:column;gap:18px}
+.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.bk{background:var(--surface);padding:13px 15px}
+.bk .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.bk .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;margin-top:3px;color:var(--ink)}
+.bk .v.neg{color:var(--caution)}
+.bk .v.pos{color:var(--on)}
+.chl{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.chl h3{margin:0}
+.chart-leg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);display:flex;gap:13px}
+.chart-leg i{font-style:normal;font-weight:700}
+svg.curve{width:100%;height:auto;display:block}
+.mtable{width:100%;border-collapse:collapse;font-size:13px}
+.mtable th{text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:0 0 9px;border-bottom:1px solid var(--line)}
+.mtable th:first-child{text-align:left}
+.mtable td{padding:10px 0;border-bottom:1px solid var(--line2);font-family:'JetBrains Mono',monospace;text-align:right;color:var(--ink)}
+.mtable td:first-child{text-align:left;font-family:Inter;font-weight:500}
+.mtable td .ph{font-size:11px;color:var(--faint);font-weight:400}
+.mtable tr.hot td{background:#FBF3E0}
+.mtable tr.hot td:first-child{box-shadow:inset 3px 0 var(--gold)}
+.mtable td.loss{color:var(--caution)}
+.mfoot{font-size:11.5px;color:var(--faint);margin-top:10px;font-family:'JetBrains Mono',monospace}
+@media(max-width:880px){.model-wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bg-grid"></div>
+  <div class="star">✦</div>
+  <div class="inner">
+    <div class="wordmark"><span class="dot"><i></i><i></i><i></i><i></i><i></i><i></i></span>PROPGRID</div>
+    <h1>Futures prop firms, <em>ranked by what matters</em>.</h1>
+    <p class="tag">Payout speed, profit split, drawdown rules — and the signal other directories miss: <b>copy-compatibility</b>. Every firm shows its TradeSyncer connection support at a glance.</p>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-total">—</div><div class="lbl">Firms listed</div></div>
+      <div class="stat"><div class="num on" id="stat-cc">—</div><div class="lbl">Copy-ready</div></div>
+      <div class="stat"><div class="num" id="stat-shown">—</div><div class="lbl">Matching filters</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" data-tab="directory" role="tab" aria-selected="true">Directory</button>
+  <button class="tab" data-tab="model" role="tab" aria-selected="false">Income Model</button>
+</nav>
+
+<div id="view-directory">
+<div class="toolbar">
+  <div class="inner">
+    <div class="row1">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="search" placeholder="Search firms…" autocomplete="off" aria-label="Search firms">
+      </div>
+      <select id="sort" aria-label="Sort by">
+        <option value="name">Sort: Name A–Z</option>
+        <option value="payout">Sort: Payout speed</option>
+        <option value="split">Sort: Profit split</option>
+        <option value="max">Sort: Max accounts</option>
+      </select>
+      <button class="reset" id="reset">Reset all</button>
+    </div>
+    <div class="chips" id="platform-chips">
+      <span class="chip-label">Platform</span>
+      <button class="chip" data-plat="0" aria-pressed="false">Rithmic</button>
+      <button class="chip" data-plat="1" aria-pressed="false">Tradovate</button>
+      <button class="chip" data-plat="2" aria-pressed="false">NinjaTrader</button>
+      <button class="chip" data-plat="3" aria-pressed="false">DxFeed</button>
+      <button class="chip" data-plat="4" aria-pressed="false">ProjectX</button>
+      <button class="chip" data-plat="5" aria-pressed="false">Tradesea</button>
+      <button class="chip cc" id="cc-chip" aria-pressed="false">⚡ Copy-ready only</button>
+    </div>
+    <div class="chips" id="dd-chips">
+      <span class="chip-label">Drawdown</span>
+      <button class="chip" data-dd="EOD" aria-pressed="false">EOD</button>
+      <button class="chip" data-dd="Trailing" aria-pressed="false">Trailing</button>
+      <button class="chip" data-dd="Static" aria-pressed="false">Static</button>
+      <button class="chip" data-dd="Instant" aria-pressed="false">Instant</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="count-line" id="count-line"></div>
+  <div class="disclaim" role="note">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+    <span>Payout speeds, splits, prices and offers are <b>seeded from public sources and change often</b> — confirm current terms on each firm's site before purchasing. Ratings link out to Trustpilot. Not affiliated with any firm.</span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none"><div class="big">No firms match</div><div>Try clearing a filter or the search box.</div></div>
+</main>
+</div><!-- /view-directory -->
+
+<div id="view-model" hidden>
+  <div class="model-hero">
+    <div class="hero-num"><div class="hl">Net income / month</div><div class="hv" id="o-month">—</div><div class="hs" id="o-month-sub">—</div></div>
+    <div class="hero-num alt"><div class="hl">Net income / year</div><div class="hv" id="o-year">—</div><div class="hs">after platform cost</div></div>
+    <div class="hero-num dn"><div class="hl">Worst-day fleet loss</div><div class="hv" id="o-worst">—</div><div class="hs">if every account hits its daily cap at once</div></div>
+  </div>
+  <div class="model-note">
+    <div class="disclaim" role="note" style="margin-top:14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>A <b>projection</b>, not a forecast — it assumes every dial holds across the whole fleet. Real per-account results vary, and because copied accounts trade together, <b>a bad day lands on all of them at once</b>. Size your cash buffer to the worst-day figure, not the upside.</span>
+    </div>
+  </div>
+  <div class="model-wrap">
+    <div class="panel">
+      <h3>Assumptions</h3>
+      <div class="grp">
+        <div class="grp-h">Per-account economics</div>
+        <div class="dial"><div class="dtop"><span class="dname">Income / day / account</span><span class="dval" id="v-perday">$500</span></div><input type="range" id="r-perday" min="100" max="1500" step="25" value="500"><div class="drange"><span>$100</span><span>$1,500</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Copy slippage / account / day</span><span class="dval" id="v-slip">$15</span></div><input type="range" id="r-slip" min="0" max="50" step="1" value="15"><div class="drange"><span>$0</span><span>$50</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Account uptime</span><span class="dval" id="v-uptime">90%</span></div><input type="range" id="r-uptime" min="50" max="100" step="1" value="90"><div class="drange"><span>50%</span><span>100%</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Trading days / month</span><span class="dval" id="v-days">20</span></div><input type="range" id="r-days" min="10" max="23" step="1" value="20"><div class="drange"><span>10</span><span>23</span></div></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">Fleet size</div>
+        <div class="dial"><div class="dtop"><span class="dname">Funded accounts</span><span class="dval" id="v-accts">14</span></div><input type="range" id="r-accts" min="1" max="259" step="1" value="14"><div class="drange"><span>1</span><span>240 cap · 259 list</span></div></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">Downside</div>
+        <div class="dial"><div class="dtop"><span class="dname">Risk / trade / account</span><span class="dval" id="v-risk">$250</span></div><input type="range" id="r-risk" min="0" max="1000" step="25" value="250"><div class="drange"><span>$0</span><span>$1,000</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Max losing trades / day</span><span class="dval" id="v-cap">2</span></div><input type="range" id="r-cap" min="0" max="5" step="1" value="2"><div class="drange"><span>0</span><span>5</span></div></div>
+        <div class="derived">
+          <div class="dr"><span class="k">Max daily loss / account</span><span class="v" id="d-maxloss">—</span></div>
+          <div class="dr"><span class="k">Worst-day fleet loss</span><span class="v" id="d-fleetloss">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="model-main">
+      <div class="panel">
+        <h3>Monthly breakdown</h3>
+        <div class="breakdown">
+          <div class="bk"><div class="l">Per-account net / day</div><div class="v" id="b-perday">—</div></div>
+          <div class="bk"><div class="l">Per-account net / month</div><div class="v" id="b-permonth">—</div></div>
+          <div class="bk"><div class="l">Fleet gross / month</div><div class="v" id="b-gross">—</div></div>
+          <div class="bk"><div class="l">Slippage + downtime drag</div><div class="v neg" id="b-drag">—</div></div>
+          <div class="bk"><div class="l">Platform cost (TradeSyncer)</div><div class="v neg" id="b-saas">—</div></div>
+          <div class="bk"><div class="l">Net / month</div><div class="v pos" id="b-net">—</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="chl"><h3>Income vs fleet size</h3><div class="chart-leg"><span style="color:var(--accent)"><i>┊</i> 120 base</span><span style="color:var(--caution)"><i>┊</i> 240 ceiling</span></div></div>
+        <div id="chart"></div>
+      </div>
+      <div class="panel">
+        <h3>Milestones at current assumptions</h3>
+        <table class="mtable">
+          <thead><tr><th>Phase</th><th>Accts</th><th>Net / month</th><th>Net / year</th><th>Worst day</th></tr></thead>
+          <tbody id="mtbody"></tbody>
+        </table>
+        <div class="mfoot">* beyond the 240-account Flex ceiling — needs a custom TradeSyncer arrangement or a second stack.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="inner">
+    <b>PROPGRID</b> — a working directory of futures prop firms with TradeSyncer copy-compatibility surfaced.
+    Connection support: <b>R</b> Rithmic · <b>T</b> Tradovate · <b>N</b> NinjaTrader · <b>D</b> DxFeed · <b>P</b> ProjectX · <b>Ts</b> Tradesea — a lit cell means that firm supports a TradeSyncer-connectable platform.<br><br>
+    Data compiled from firm help centers, propfirmmatch.com, thepropfirmguide.com, quantvps.com and firm blogs (2026). Prop-firm terms, platforms, caps and offers rotate frequently — always verify before committing capital. Trading futures involves substantial risk of loss.
+  </div>
+</footer>
+
+<script>
+// ---- data: platforms = [Rithmic, Tradovate, NinjaTrader, DxFeed, ProjectX, Tradesea] ----
+// payR lower = faster; splitN = max split % for sort; maxN = sort key for accounts
+const FIRMS=[
+ {n:"Apex Trader Funding",p:[1,1,1,0,0,0],max:"20",maxN:20,dd:"Trailing (intraday)",asset:"Futures",pay:"Weekly (slower)",payR:6,split:"100% first $25K, then 90%",splitN:100,price:"$167/mo (50K)",offer:"Frequent eval discounts",rep:"est",types:"1-step eval → PA",notes:"Largest firm by volume; $500M+ paid out; 17k+ Trustpilot reviews. $99 activation; platform locked at purchase. Up to 20 funded accounts.",src:"support.apextraderfunding.com"},
+ {n:"Topstep",p:[1,1,1,1,1,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"Weekly",payR:5,split:"90 / 10",splitN:90,price:"$49–109 one-time (50K)",offer:"",rep:"est",types:"1-step Combine",notes:"Since 2012, NFA-registered with own brokerage. $1,000 bonus at $10K profit. Only firm with ProjectX after Feb 2026 cutoff; acquired The Futures Desk. TopstepX runs on DXTrade/dxFeed.",src:"topstep.com"},
+ {n:"Take Profit Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"On demand (~24h)",payR:2,split:"80–90%",splitN:90,price:"$170 (50K)",offer:"",rep:"est",types:"Eval / PRO / PRO+",notes:"$1,000 payout guarantee; processes within 24h once buffer cleared. Also CQG. EOD trailing drawdown.",src:"takeprofittrader.com"},
+ {n:"MyFundedFutures",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~1 min (fastest); daily on Rapid",payR:1,split:"100% first $10K, then 90%",splitN:100,price:"$77 (50K)",offer:"",rep:"est",types:"Core / Rapid / Pro / Milestone",notes:"Up to $600K capital. One-step eval, no daily loss limit, 40% consistency rule, no swing trading. Direct dxFeed deal; also Quantower, ATAS. Cap is 5 sim-funded (10 accounts total incl. evaluations).",src:"help.myfundedfutures.com"},
+ {n:"Tradeify",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Daily or 5-day (Select)",payR:2,split:"90%",splitN:90,price:"$103 one-time (Select 50K)",offer:"No activation fee",rep:"est",types:"Growth / Select / Lightning (instant)",notes:"Lowest total cost of funding among top firms. Lightning instant funding ($349–729). EOD drawdown, no activation fee. Tradovate + WealthCharts; Tradesea partner.",src:"help.tradeify.co"},
+ {n:"Lucid Trading",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~15 min (fast)",payR:2,split:"100%",splitN:100,price:"Verify",offer:"",rep:"est",types:"LucidPro / LucidFlex / Instant",notes:"100% split. Also Sierra Chart, MotiveWave, Quantower, Bookmap. Tradesea partner. LucidX feed removed. Cap is 5 funded (10 total incl. evaluation accounts in reserve).",src:"support.lucidtrading.com"},
+ {n:"Elite Trader Funding",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing + Static + EOD",asset:"Futures",pay:"After 8 active days",payR:4,split:"100%",splitN:100,price:"From ~$80/mo",offer:"",rep:"est",types:"Fast Track / Diamond / Static",notes:"100% profit retention during sim period. 12+ platforms via Rithmic.",src:"elitetraderfunding.com"},
+ {n:"Bulenox",p:[1,0,1,0,0,0],max:"11",maxN:11,dd:"Trailing + EOD",asset:"Futures",pay:"Verify",payR:6,split:"100%",splitN:100,price:"$175 (50K)",offer:"",rep:"new",types:"Option 1 / Option 2",notes:"100% split. Tradovate not on official connection page. 21+ Rithmic-compatible platforms. Cap reported as 11 by one tracker, 3 by another — confirm current.",src:"bulenox.com"},
+ {n:"TradeDay",p:[1,1,1,0,0,0],max:"6",maxN:6,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"80–95%",splitN:95,price:"Verify",offer:"30% off + no activation (NinjaTrader)",rep:"est",types:"1-step eval",notes:"Coaching support, zero commissions. Also TradingView, Jigsaw. TradeDayX discontinued.",src:"tradeday.com"},
+ {n:"Alpha Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Standard / Advanced / Zero / Instant",notes:"AlphaTrader runs on Rithmic. Also WealthCharts, TradingView. AlphaTicks feed discontinued. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"alpha-futures.com"},
+ {n:"Phidias Propfirm",p:[1,1,1,0,0,0],max:"15",maxN:15,dd:"Trailing / EOD",asset:"Futures",pay:"48 hrs eval-to-payout (fast)",payR:2,split:"80–90%",splitN:90,price:"$149 / $55 (50K)",offer:"80% off OTP accounts (NinjaTrader launch)",rep:"est",types:"Express / Fundamental / Premium",notes:"30% consistency rule (stricter than most). Bi-weekly/monthly payouts; faster for consistent traders. Also DeepCharts, TradingView.",src:"phidiaspropfirm.com"},
+ {n:"FundedNext Futures",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"After 1 day",payR:3,split:"60–95%",splitN:95,price:"$159.99 (50K)",offer:"",rep:"est",types:"1-step",notes:"Scalable to $1.2M for consistent performers. News trading allowed. Via Tradovate/Rithmic.",src:"fundednext.com"},
+ {n:"Earn2Trade",p:[1,1,1,0,0,0],max:"1",maxN:1,dd:"Trailing (Gauntlet)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"est",types:"Gauntlet Mini / Trader Career Path",notes:"~20 platforms (Finamark, Overcharts, etc.). Long-running education-focused firm. Limits traders to 1 funded account and prohibits copy trading — not usable for a copy fleet.",src:"earn2trade.com"},
+ {n:"OneUp Trader",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval + Express",notes:"Runs on Rithmic; any Rithmic-compatible platform. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.oneuptrader.com"},
+ {n:"Leeloo Trading",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Static & trailing evals",notes:"NT7 & NT8. Also Bookmap, MotiveWave, ATAS, Sierra Chart. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"leelootrading.com"},
+ {n:"UProfit Trader",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing / EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval + Instant",notes:"Has a built-in trade copier — copy-friendly. TradingView supported. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"uprofit.com"},
+ {n:"BluSky Trading",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Efficient (verify)",payR:6,split:"Verify",splitN:null,price:"$160 (50K)",offer:"",rep:"new",types:"Eval / Instant / Direct-to-Funded",notes:"Low fees. Rithmic ecosystem (Quantower, Jigsaw, ATAS, Sierra, Bookmap). Tradesea partner. Trackers list 3–5 — confirm current.",src:"blusky.pro"},
+ {n:"TickTick Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"$145 (50K)",offer:"",rep:"new",types:"Eval + TTTDirect (instant)",notes:"Broad platform compatibility. Rithmic temporarily unavailable on some evals — check current.",src:"futuresproptrading.com"},
+ {n:"Top One Futures",p:[0,0,0,0,0,0],max:"3",maxN:3,dd:"EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"Eval + Instant",notes:"Migrated off ProjectX; current platform stack unconfirmed. Verify connectivity before relying on it. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"toponetrader.com"},
+ {n:"Aqua Futures",p:[1,0,0,0,0,0],max:"3",maxN:3,dd:"EOD + Static",asset:"Futures",pay:"Bi-weekly (~7 days)",payR:4,split:"Up to 100%",splitN:100,price:"Verify",offer:"",rep:"new",types:"Beginner / Standard / Instant",notes:"Rithmic/CQG. Swing-friendly, static drawdown. UAE-based (serves US). Uses Quantower, Volumetrica. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.aquafutures.io"},
+ {n:"FastTrack Trading",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Static (instant)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"Instant funding",notes:"CAUTION: community reputation / payout concerns — vet carefully before committing. Also Quantower. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"rithmic.com/ecosystem"},
+ {n:"Goat Funded Futures",p:[0,1,1,0,0,0],max:"3",maxN:3,dd:"EOD + Static + Instant",asset:"Futures",pay:"5-day cycles",payR:4,split:"80%",splitN:80,price:"Verify",offer:"",rep:"new",types:"EOD Eval / Sprint / Instant / Pro",notes:"CQG-based. Verify copy/EA rules before relying on it. Also Quantower, Deepcharts. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.goatfundedfutures.com"},
+ {n:"FXIFY Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step + Instant",notes:"Direct-to-Sim-Live option. Futures arm of FXIFY. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"fxifyfutures.com"},
+ {n:"Legends Trading",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"$165 (50K)",offer:"",rep:"new",types:"Apprentice / Elite / Straight-to-Master",notes:"NinjaTrader works only via the Tradovate connection, NOT Rithmic. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"damnpropfirms.com"},
+ {n:"E8 Futures",p:[0,1,0,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"E8 Signature Futures (single-phase)",notes:"CQG/Tradovate infrastructure — Tradovate is the only platform. Copying across own accounts allowed. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"helpfutures.e8markets.com"},
+ {n:"The Trading Pit",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Static + Trailing",asset:"Multi-asset",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Scaling challenge to $5M",notes:"Tradovate/NinjaTrader on the Futures Prime tier. Copy up to 5. Also ATAS, Quantower, Volsys.",src:"support.thetradingpit.com"},
+ {n:"Blue Guardian Futures",p:[0,1,0,1,0,0],max:"3",maxN:3,dd:"EOD + Instant",asset:"Futures",pay:"24h guarantee",payR:2,split:"90% (100% first $15K)",splitN:90,price:"Instant from $10 (5K)",offer:"",rep:"new",types:"1-step / Guardian / Instant",notes:"Guardian Shield tech; 24h payout guarantee or split upgraded to 100% on that withdrawal. Stack in flux post-ProjectX. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"blueguardian.com"},
+ {n:"Halcyon Trader Funding",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"Static (instant) + 1-step",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Instant + 1-step",notes:"Source conflict on Tradovate/NinjaTrader support — verify. Also Quantower, Volumetrica, TradingView. Tradesea partner. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"tradesea.ai/partnerships"},
+ {n:"FundedSeat",p:[1,0,0,0,0,1],max:"5",maxN:5,dd:"EOD + Static + Instant",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"3× 1-step + 3× instant",notes:"Rithmic-native; no NinjaTrader/Tradovate. Tradesea partner. Separate CFD models exist. Supports Rithmic but PROHIBITS copy trading — not usable for a copy fleet.",src:"damnpropfirms.com"},
+ {n:"EdgeProp",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval (EU/US)",notes:"Rithmic-based. Tradesea partner. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"edgeproptrading.com"},
+ {n:"Onyx (onyx-futures.com)",p:[1,0,0,0,0,1],max:"10",maxN:10,dd:"EOD + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"One-time-fee evals (EOD & Static)",notes:"Up to 10 accounts. TradingView charting. Tradesea partner. Distinct from DayTraders' separate 'Onyx' browser platform.",src:"onyx-futures.com"},
+ {n:"FundYourEdge",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Verify",notes:"Rithmic-based. Tradesea integration 'coming soon'. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"tradesea.ai/partnerships"},
+ {n:"Funded Futures Network",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval",notes:"Free FundX (Quantower) & EdgeProX (MotiveWave). Rithmic/NinjaTrader. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"damnpropfirms.com"},
+ {n:"DayTraders",p:[1,0,1,0,0,0],max:"15",maxN:15,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"100%",splitN:100,price:"$49 (50K)",offer:"",rep:"new",types:"Eval",notes:"100% split. Trades via its own 'Onyx' browser platform on Rithmic.",src:"daytraders.com"},
+ {n:"Hola Prime",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"1-hour payouts",payR:1,split:"Up to 95%",splitN:95,price:"Verify",offer:"20% off — code BENZINGA20",rep:"new",types:"Multi-stage funding",notes:"No subscription or activation fee. $3M+ in payouts. Verify current futures platform list. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"holaprime.com"},
+ {n:"FunderPro Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval",notes:"Rithmic is the mandatory execution layer. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"funderprofutures.com"},
+ {n:"The5ers Futures",p:[0,0,0,1,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval",notes:"dxFeed-powered futures arm. Known forex brand expanding to futures. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"vettedpropfirms.com"},
+ {n:"Funded Futures Family",p:[0,1,1,0,0,0],max:"4",maxN:4,dd:"EOD + Intraday Trailing",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"6 plans + Straight-to-Funded",notes:"Dallas-based, 2024. NO bots/algos allowed — verify copy-trading is permitted before fleet use. Up to ~$600K across 4 accounts. TradingView via Tradovate.",src:"fundedfuturesfamily.com"},
+ {n:"PropEd Capital",p:[0,0,0,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Weekly",payR:5,split:"Verify",splitN:null,price:"Verify",offer:"55% off — code FT",rep:"caution",types:"Proprietary Nexus platform",notes:"Runs its OWN 'Nexus' platform — support for the six standard connectable platforms is unconfirmed. New (domain registered Sept 2025). No-automation concern for copy fleets. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"propedcapital.com"},
+ {n:"TradersLaunch",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"End of Day (EOD)",asset:"Futures",pay:"Same-day / daily",payR:2,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval; live-funded path",notes:"US, 2024. Same-day payouts, no payout caps once funded, no funded consistency rule. Up to ~$200K. Newer brand. Also TradingView.",src:"traderslaunch.com"},
+ {n:"4PropTrader",p:[1,0,1,1,0,0],max:"3",maxN:3,dd:"EOD / EOD Trailing",asset:"Futures + CFD",pay:"Verify",payR:6,split:"95% (100% first $8K)",splitN:95,price:"Verify",offer:"",rep:"caution",types:"1-step / 2-step ($10K–$250K)",notes:"Dubai-based. Rithmic R|Trader Pro + dxFeed + free ATAS. CAUTION: notable payout-rejection complaints (Trustpilot/FPA) — vet carefully. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"4proptrader.com"}
+];
+
+const PLAT_K=["R","T","N","D","P","Ts"];
+const PLAT_NAME=["Rithmic","Tradovate","NinjaTrader","DxFeed","ProjectX","Tradesea"];
+const COLORS=["#3B4FE0","#0C7C63","#9333A8","#C2410C","#0E7490","#B45309","#1E3A8A","#BE185D","#15803D","#7C3AED","#0369A1","#A16207"];
+function colorFor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return COLORS[h%COLORS.length];}
+function monogram(n){const w=n.replace(/[^A-Za-z0-9 ].*/,'').trim().split(/\s+/);return (w[0][0]+(w[1]?w[1][0]:(w[0][1]||''))).toUpperCase();}
+const REP={est:["rep-est","Established"],new:["rep-new","Newer"],caution:["rep-caution","Caution"]};
+
+// ---- state ----
+const state={q:"",sort:"name",plats:new Set(),cc:false,dd:new Set()};
+
+function ccOf(f){return f.p.some(x=>x===1);}
+function passes(f){
+  if(state.q && !f.n.toLowerCase().includes(state.q)) return false;
+  if(state.cc && !ccOf(f)) return false;
+  for(const i of state.plats){ if(f.p[i]!==1) return false; }
+  if(state.dd.size){ const d=f.dd.toLowerCase(); let ok=false; for(const x of state.dd){ if(d.includes(x.toLowerCase())) ok=true; } if(!ok) return false; }
+  return true;
+}
+function sortFn(a,b){
+  switch(state.sort){
+    case "payout": return (a.payR-b.payR)||a.n.localeCompare(b.n);
+    case "split": return ((b.splitN??-1)-(a.splitN??-1))||a.n.localeCompare(b.n);
+    case "max": return (b.maxN-a.maxN)||a.n.localeCompare(b.n);
+    default: return a.n.localeCompare(b.n);
+  }
+}
+
+function strip(f){
+  return '<div class="strip">'+f.p.map((on,i)=>
+    `<div class="cell${on?' lit':''}" title="${PLAT_NAME[i]}: ${on?'supported':'not supported / unverified'}"><div class="k">${PLAT_K[i]}</div><div class="v">${on?'on':'—'}</div></div>`
+  ).join('')+'</div>';
+}
+function card(f){
+  const cc=ccOf(f); const rep=REP[f.rep];
+  const rev='https://www.trustpilot.com/search?query='+encodeURIComponent(f.n.replace(/\s*\(.*\)/,''));
+  return `<article class="card">
+    <div class="chead">
+      <div class="mono-badge" style="background:${colorFor(f.n)}">${monogram(f.n)}</div>
+      <div style="min-width:0">
+        <div class="cname">${f.n}</div>
+        <span class="crep ${rep[0]}">${rep[1]}</span>
+      </div>
+      <span class="cc-pill ${cc?'cc-yes':'cc-no'}"><span class="ico"></span><span class="txt">${cc?'Copy-ready':'Verify'}</span></span>
+    </div>
+    ${strip(f)}
+    <div class="cstats">
+      <div class="cstat"><div class="l">Payout speed</div><div class="d sm">${f.pay}</div></div>
+      <div class="cstat"><div class="l">Profit split</div><div class="d sm">${f.split}</div></div>
+      <div class="cstat"><div class="l">Max accounts</div><div class="d">${f.max}</div></div>
+      <div class="cstat"><div class="l">Eval from</div><div class="d sm">${f.price}</div></div>
+    </div>
+    <div class="ctags">
+      <span class="t">${f.dd}</span><span class="t">${f.asset}</span>
+      ${f.offer?`<span class="t offer">★ ${f.offer}</span>`:''}
+    </div>
+    <div class="cfoot">
+      <button class="expand" aria-expanded="false">Details <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+      <a class="rev" href="${rev}" target="_blank" rel="noopener">Reviews ↗</a>
+    </div>
+    <div class="detail">
+      <div class="drow"><div class="dl">Account / eval types</div><div class="dv">${f.types}</div></div>
+      <div class="note">${f.notes}</div>
+      <a class="src" href="https://${f.src.split('/')[0]}" target="_blank" rel="noopener">${f.src} ↗</a>
+    </div>
+  </article>`;
+}
+
+const grid=document.getElementById('grid');
+function render(){
+  const list=FIRMS.filter(passes).sort(sortFn);
+  grid.innerHTML=list.map(card).join('');
+  document.getElementById('empty').style.display=list.length?'none':'block';
+  document.getElementById('stat-shown').textContent=list.length;
+  document.getElementById('count-line').textContent=`Showing ${list.length} of ${FIRMS.length} firms`+
+    (state.cc?' · copy-ready only':'')+(state.plats.size?' · '+[...state.plats].map(i=>PLAT_NAME[i]).join(' + '):'');
+  // wire expanders
+  grid.querySelectorAll('.expand').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const open=btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded',!open);
+      btn.parentElement.nextElementSibling.classList.toggle('open',!open);
+    });
+  });
+}
+function refreshChips(){
+  document.querySelectorAll('[data-plat]').forEach(c=>c.setAttribute('aria-pressed',state.plats.has(+c.dataset.plat)));
+  document.querySelectorAll('[data-dd]').forEach(c=>c.setAttribute('aria-pressed',state.dd.has(c.dataset.dd)));
+  document.getElementById('cc-chip').setAttribute('aria-pressed',state.cc);
+}
+
+// ---- events ----
+document.getElementById('search').addEventListener('input',e=>{state.q=e.target.value.trim().toLowerCase();render();});
+document.getElementById('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+document.querySelectorAll('[data-plat]').forEach(c=>c.addEventListener('click',()=>{
+  const i=+c.dataset.plat; state.plats.has(i)?state.plats.delete(i):state.plats.add(i); refreshChips(); render();
+}));
+document.querySelectorAll('[data-dd]').forEach(c=>c.addEventListener('click',()=>{
+  const d=c.dataset.dd; state.dd.has(d)?state.dd.delete(d):state.dd.add(d); refreshChips(); render();
+}));
+document.getElementById('cc-chip').addEventListener('click',()=>{state.cc=!state.cc;refreshChips();render();});
+document.getElementById('reset').addEventListener('click',()=>{
+  state.q="";state.sort="name";state.plats.clear();state.cc=false;state.dd.clear();
+  document.getElementById('search').value="";document.getElementById('sort').value="name";
+  refreshChips();render();
+});
+
+// ---- init ----
+document.getElementById('stat-total').textContent=FIRMS.length;
+document.getElementById('stat-cc').textContent=FIRMS.filter(ccOf).length;
+render();
+
+// ================= INCOME MODEL =================
+const M={perday:500,slip:15,uptime:90,days:20,accts:14,risk:250,cap:2};
+const CEIL=240, MAXA=259;
+const set=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t;};
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const fmtNeg=n=>'−$'+Math.round(Math.abs(n)).toLocaleString();
+const fmtAx=n=>{n=Math.round(n);const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toFixed(1)+'M';if(a>=1e3)return '$'+Math.round(n/1e3)+'k';return '$'+n;};
+const saasFor=a=>a<=120?149:224;
+const effDay=()=>(M.perday-M.slip)*(M.uptime/100);
+const effMonth=()=>effDay()*M.days;
+const fleetNet=a=>effMonth()*a;
+const maxLossAcct=()=>M.risk*M.cap;
+
+const MILES=[[14,'Phase 1','Bootstrap'],[93,'Phase 2','Anchors'],[120,'Flex base',''],[240,'Flex ceiling',''],[259,'Full list','']];
+
+function drawChart(cur){
+  const W=760,H=300,pl=62,pr=18,pt=18,pb=32,iw=W-pl-pr,ih=H-pt-pb;
+  const maxY=fleetNet(MAXA)||1;
+  const X=a=>pl+(a/MAXA)*iw, Y=v=>pt+ih-(v/maxY)*ih;
+  let yt='';for(let i=0;i<=4;i++){const v=maxY*i/4,y=Y(v);yt+=`<line x1="${pl}" y1="${y.toFixed(1)}" x2="${W-pr}" y2="${y.toFixed(1)}" stroke="#EFE9DC"/><text x="${pl-8}" y="${(y+3).toFixed(1)}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">${fmtAx(v)}</text>`;}
+  let xt='';[0,60,120,180,240,259].forEach(a=>{xt+=`<text x="${X(a).toFixed(1)}" y="${H-11}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">${a}</text>`;});
+  const area=`M ${X(1).toFixed(1)},${Y(0).toFixed(1)} L ${X(1).toFixed(1)},${Y(fleetNet(1)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(0).toFixed(1)} Z`;
+  const solid=`${X(1).toFixed(1)},${Y(fleetNet(1)).toFixed(1)} ${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)}`;
+  const dash=`${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)} ${X(MAXA).toFixed(1)},${Y(fleetNet(MAXA)).toFixed(1)}`;
+  const g120=`<line x1="${X(120).toFixed(1)}" y1="${pt}" x2="${X(120).toFixed(1)}" y2="${pt+ih}" stroke="#9CA6B8" stroke-dasharray="3 3" opacity=".45"/>`;
+  const g240=`<line x1="${X(CEIL).toFixed(1)}" y1="${pt}" x2="${X(CEIL).toFixed(1)}" y2="${pt+ih}" stroke="#B23C12" stroke-dasharray="3 3" opacity=".55"/>`;
+  const over=cur>CEIL, cx=X(cur), cy=Y(fleetNet(cur));
+  const lblX=Math.min(Math.max(cx,pl+30),W-pr-30);
+  const dot=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${over?'#9A6700':'#1F7A52'}" stroke="#fff" stroke-width="2"/><text x="${lblX.toFixed(1)}" y="${(cy-12).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0B1A30">${fmtAx(fleetNet(cur))}/mo</text>`;
+  document.getElementById('chart').innerHTML=`<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly net income versus number of funded accounts">
+    ${yt}<path d="${area}" fill="#E3F0E8"/>
+    <polyline points="${solid}" fill="none" stroke="#1F7A52" stroke-width="2.5"/>
+    <polyline points="${dash}" fill="none" stroke="#9A6700" stroke-width="2" stroke-dasharray="5 4"/>
+    ${g120}${g240}${dot}${xt}</svg>`;
+}
+function renderMiles(cur){
+  let hot=MILES[0][0];for(const m of MILES){if(Math.abs(m[0]-cur)<Math.abs(hot-cur))hot=m[0];}
+  document.getElementById('mtbody').innerHTML=MILES.map(([a,lbl,ph])=>{
+    const net=fleetNet(a)-saasFor(a), worst=maxLossAcct()*a, over=a>CEIL;
+    return `<tr class="${a===hot?'hot':''}"><td>${lbl} <span class="ph">${ph}</span></td><td>${a}${over?'*':''}</td><td>${fmt(net)}</td><td>${fmt(net*12)}</td><td class="loss">${fmtNeg(worst)}</td></tr>`;
+  }).join('');
+}
+function recalc(){
+  const a=M.accts;
+  const gross=M.perday*a*M.days*(M.uptime/100);
+  const net=fleetNet(a), drag=gross-net, saas=saasFor(a), netAfter=net-saas, worst=maxLossAcct()*a;
+  set('o-month',fmt(netAfter)); set('o-month-sub',`${a} accounts · ${fmt(saas)}/mo platform`);
+  set('o-year',fmt(netAfter*12)); set('o-worst',fmtNeg(worst));
+  set('b-perday',fmt(effDay())); set('b-permonth',fmt(effMonth()));
+  set('b-gross',fmt(gross)); set('b-drag',fmtNeg(drag)); set('b-saas',fmtNeg(saas)); set('b-net',fmt(netAfter));
+  set('d-maxloss',fmtNeg(maxLossAcct())); set('d-fleetloss',fmtNeg(worst));
+  renderMiles(a); drawChart(a);
+}
+[['r-perday','perday',v=>'$'+(+v).toLocaleString()],['r-slip','slip',v=>'$'+v],['r-uptime','uptime',v=>v+'%'],['r-days','days',v=>v],['r-accts','accts',v=>v],['r-risk','risk',v=>'$'+(+v).toLocaleString()],['r-cap','cap',v=>v]].forEach(([id,key,f])=>{
+  const el=document.getElementById(id), out=document.getElementById('v-'+key);
+  out.textContent=f(el.value);
+  el.addEventListener('input',()=>{M[key]=+el.value;out.textContent=f(el.value);recalc();});
+});
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  const m=t.dataset.tab==='model';
+  document.getElementById('view-directory').hidden=m;
+  document.getElementById('view-model').hidden=!m;
+}));
+recalc();
+</script>
+</body>
+</html>
