@@ -187,6 +187,14 @@ svg.curve{width:100%;height:auto;display:block}
 .mtable tr.hot td:first-child{box-shadow:inset 3px 0 var(--gold)}
 .mtable td.loss{color:var(--caution)}
 .mfoot{font-size:11.5px;color:var(--faint);margin-top:10px;font-family:'JetBrains Mono',monospace}
+.step{display:inline-flex;align-items:center;gap:6px}
+.step button{width:22px;height:22px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;line-height:1;padding:0}
+.step button:hover{border-color:var(--on);color:var(--on)}
+.step .n{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:20px;text-align:center}
+#mix-table td{padding:7px 4px 7px 0;font-size:12.5px}
+#mix-table td:first-child{white-space:nowrap}
+#mix-table .cad{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)}
+#mix-table .life{color:var(--caution);font-size:10.5px;font-family:'JetBrains Mono',monospace}
 @media(max-width:880px){.model-wrap{grid-template-columns:1fr}}
 </style>
 </head>
@@ -260,14 +268,15 @@ svg.curve{width:100%;height:auto;display:block}
 
 <div id="view-model" hidden>
   <div class="model-hero">
-    <div class="hero-num"><div class="hl">Net income / month</div><div class="hv" id="o-month">—</div><div class="hs" id="o-month-sub">—</div></div>
-    <div class="hero-num alt"><div class="hl">Net income / year</div><div class="hv" id="o-year">—</div><div class="hs">after platform cost</div></div>
-    <div class="hero-num dn"><div class="hl">Worst-day fleet loss</div><div class="hv" id="o-worst">—</div><div class="hs">if every account hits its daily cap at once</div></div>
+    <div class="hero-num"><div class="hl">Cash / day</div><div class="hv" id="o-day">—</div><div class="hs">avg per trading day</div></div>
+    <div class="hero-num"><div class="hl">Cash / week</div><div class="hv" id="o-week">—</div><div class="hs">5 trading days</div></div>
+    <div class="hero-num alt"><div class="hl">Net cash / month</div><div class="hv" id="o-month">—</div><div class="hs" id="o-month-sub">—</div></div>
+    <div class="hero-num dn"><div class="hl">Worst-day fleet loss</div><div class="hv" id="o-worst">—</div><div class="hs">all accounts hit the daily cap at once</div></div>
   </div>
   <div class="model-note">
     <div class="disclaim" role="note" style="margin-top:14px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
-      <span>A <b>projection</b>, not a forecast — it assumes every dial holds across the whole fleet. Real per-account results vary, and because copied accounts trade together, <b>a bad day lands on all of them at once</b>. Size your cash buffer to the worst-day figure, not the upside.</span>
+      <span>A <b>projection</b>, not a forecast — it assumes every dial holds across the whole fleet. Real per-account results vary, and because copied accounts trade together, <b>a bad day lands on all of them at once</b>. Size your cash buffer to the worst-day figure, not the upside. Earned P&L is not cash: firms throttle withdrawals via payout cycles and caps — the extraction-cap dial and the verified throughput table below model that.</span>
     </div>
   </div>
   <div class="model-wrap">
@@ -281,8 +290,13 @@ svg.curve{width:100%;height:auto;display:block}
         <div class="dial"><div class="dtop"><span class="dname">Trading days / month</span><span class="dval" id="v-days">20</span></div><input type="range" id="r-days" min="10" max="23" step="1" value="20"><div class="drange"><span>10</span><span>23</span></div></div>
       </div>
       <div class="grp">
-        <div class="grp-h">Fleet size</div>
-        <div class="dial"><div class="dtop"><span class="dname">Funded accounts</span><span class="dval" id="v-accts">14</span></div><input type="range" id="r-accts" min="1" max="259" step="1" value="14"><div class="drange"><span>1</span><span>240 cap · 259 list</span></div></div>
+        <div class="grp-h">Fleet size (from mix →)</div>
+        <div class="dial"><div class="dtop"><span class="dname">Funded accounts</span><span class="dval" id="v-accts">14</span></div><div class="drange"><span>set per firm in the Fleet Mix panel</span><span>240 Flex cap</span></div></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">Payout reality</div>
+        <div class="dial"><div class="dtop"><span class="dname">“Other” firms: cap / acct / mo</span><span class="dval" id="v-xcap">$4,000</span></div><input type="range" id="r-xcap" min="500" max="12000" step="250" value="4000"><div class="drange"><span>$500</span><span>$12,000 ≈ uncapped</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">“Other” firms: split kept</span><span class="dval" id="v-split">90%</span></div><input type="range" id="r-split" min="50" max="100" step="5" value="90"><div class="drange"><span>50%</span><span>100%</span></div></div>
       </div>
       <div class="grp">
         <div class="grp-h">Downside</div>
@@ -296,18 +310,28 @@ svg.curve{width:100%;height:auto;display:block}
     </div>
     <div class="model-main">
       <div class="panel">
-        <h3>Monthly breakdown</h3>
+        <div class="chl"><h3>Fleet mix — researched throughput per firm</h3><div class="chart-leg"><span id="mix-total-lbl"></span></div></div>
+        <table class="mtable" id="mix-table">
+          <thead><tr><th>Firm</th><th>Cadence</th><th>Cap /mo</th><th>Split</th><th>Accts</th><th>Cash /mo</th></tr></thead>
+          <tbody id="mix-body"></tbody>
+        </table>
+        <div class="mfoot">Caps are 50K-account monthly ceilings from the July 2026 research (≈ = estimated from cycle caps × realistic cycles). <span style="color:var(--caution)">Ladder-lifetime firms burn out:</span> months shown = lifetime cap ÷ monthly extraction, then re-eval. “Other (blended)” uses the two dials on the left.</div>
+      </div>
+      <div class="panel">
+        <h3>Monthly breakdown — paper vs cash</h3>
         <div class="breakdown">
-          <div class="bk"><div class="l">Per-account net / day</div><div class="v" id="b-perday">—</div></div>
-          <div class="bk"><div class="l">Per-account net / month</div><div class="v" id="b-permonth">—</div></div>
-          <div class="bk"><div class="l">Fleet gross / month</div><div class="v" id="b-gross">—</div></div>
-          <div class="bk"><div class="l">Slippage + downtime drag</div><div class="v neg" id="b-drag">—</div></div>
+          <div class="bk"><div class="l">Per-account earned (paper)</div><div class="v" id="b-perday">—</div></div>
+          <div class="bk"><div class="l">Per-account cash extracted</div><div class="v pos" id="b-permonth">—</div></div>
+          <div class="bk"><div class="l">Fleet earned (paper)</div><div class="v" id="b-gross">—</div></div>
+          <div class="bk"><div class="l">Trapped by payout caps</div><div class="v neg" id="b-trap">—</div></div>
+          <div class="bk"><div class="l">Firm split cost</div><div class="v neg" id="b-drag">—</div></div>
           <div class="bk"><div class="l">Platform cost (TradeSyncer)</div><div class="v neg" id="b-saas">—</div></div>
-          <div class="bk"><div class="l">Net / month</div><div class="v pos" id="b-net">—</div></div>
+          <div class="bk"><div class="l">Net cash / month</div><div class="v pos" id="b-net">—</div></div>
+          <div class="bk"><div class="l">Extraction efficiency</div><div class="v" id="b-eff">—</div></div>
         </div>
       </div>
       <div class="panel">
-        <div class="chl"><h3>Income vs fleet size</h3><div class="chart-leg"><span style="color:var(--accent)"><i>┊</i> 120 base</span><span style="color:var(--caution)"><i>┊</i> 240 ceiling</span></div></div>
+        <div class="chl"><h3>Cash extraction vs fleet size</h3><div class="chart-leg"><span style="color:#9CA6B8"><i>╌</i> paper P&L</span><span style="color:var(--on)"><i>—</i> cash</span><span style="color:#9CA6B8"><i>┊</i> 120 base</span><span style="color:var(--caution)"><i>┊</i> 240 ceiling</span></div></div>
         <div id="chart"></div>
       </div>
       <div class="panel">
@@ -317,6 +341,28 @@ svg.curve{width:100%;height:auto;display:block}
           <tbody id="mtbody"></tbody>
         </table>
         <div class="mfoot">* beyond the 240-account Flex ceiling — needs a custom TradeSyncer arrangement or a second stack.</div>
+      </div>
+      <div class="panel">
+        <h3>Verified payout throughput — 50K accounts, researched Jul 2026</h3>
+        <table class="mtable">
+          <thead><tr><th>Firm</th><th>Schedule</th><th>Cap / cycle</th><th>≈ Ceiling / mo</th><th>Split</th></tr></thead>
+          <tbody>
+            <tr><td>Take Profit Trader</td><td>Daily on demand</td><td>$10k /day <span class="ph">then halt</span></td><td>~$200k (rarely binds)</td><td>80–90%</td></tr>
+            <tr><td>Topstep</td><td>5 winning days /cycle</td><td>$2,000</td><td>$4–8k</td><td>90%</td></tr>
+            <tr><td>Tradeify <span class="ph">Growth</span></td><td>5 trading days /cycle</td><td>$1.5k → $25k ladder</td><td>$3–6k early</td><td>90%</td></tr>
+            <tr><td>Lucid <span class="ph">Flex/Pro</span></td><td>Cycle (Pro: 3-day)</td><td>$1.5k–$4k</td><td>$3–8k</td><td>90%</td></tr>
+            <tr><td>BluSky</td><td>Daily ($250 min)</td><td>$2.5k /rolling 7d (50K)</td><td>~$10k <span class="ph">+ $10k review gate</span></td><td>Verify</td></tr>
+            <tr><td>Legends</td><td>2×/month windows</td><td>$2k /cycle (fixed)</td><td>~$4k</td><td>90%</td></tr>
+            <tr><td>DayTraders</td><td>8 QDays /cycle</td><td>$2k /request (50K)</td><td>~$4k</td><td>100%</td></tr>
+            <tr><td>TradeDay</td><td>Daily above buffer</td><td>None</td><td>Uncapped</td><td>80–95%</td></tr>
+            <tr><td>Bulenox</td><td>Weekly (Wed)</td><td>$1.5k ×3, then none</td><td>~$6k → uncapped</td><td>90–100%</td></tr>
+            <tr><td>Apex</td><td>5 qual. days /cycle</td><td class="loss">$1.5k–$3k ladder</td><td class="loss">$13k LIFETIME /PA</td><td>100%</td></tr>
+            <tr><td>Alpha <span class="ph">Premium</span></td><td>Per cycle (positive P&L)</td><td>$2k→$4k ladder</td><td>~$4–8k</td><td>90%</td></tr>
+            <tr><td>FundedNext <span class="ph">Legacy</span></td><td>5 benchmark days /cycle</td><td>50% ≤ $6k, 30d→none</td><td>~$6–12k</td><td>80–90%</td></tr>
+            <tr><td>MyFundedFutures</td><td>Plan-dependent</td><td>Core ~$1k <span class="ph">verify</span></td><td>Verify</td><td>90–100%</td></tr>
+          </tbody>
+        </table>
+        <div class="mfoot">Set the extraction-cap dial to match your fleet mix: TPT-heavy → drag high ($10k/day cap almost never binds at normal pace); Apex-heavy → ~$3–4k and remember the $13k lifetime cap per PA (leftover profit is forfeited at close, then you re-eval). Cap/cycle figures are per account; every copied account has its own independent cycle.</div>
       </div>
     </div>
   </div>
@@ -334,46 +380,46 @@ svg.curve{width:100%;height:auto;display:block}
 // ---- data: platforms = [Rithmic, Tradovate, NinjaTrader, DxFeed, ProjectX, Tradesea] ----
 // payR lower = faster; splitN = max split % for sort; maxN = sort key for accounts
 const FIRMS=[
- {n:"Apex Trader Funding",p:[1,1,1,0,0,0],max:"20",maxN:20,dd:"Trailing (intraday)",asset:"Futures",pay:"Weekly (slower)",payR:6,split:"100% first $25K, then 90%",splitN:100,price:"$167/mo (50K)",offer:"Frequent eval discounts",rep:"est",types:"1-step eval → PA",notes:"Largest firm by volume; $500M+ paid out; 17k+ Trustpilot reviews. $99 activation; platform locked at purchase. Up to 20 funded accounts.",src:"support.apextraderfunding.com"},
- {n:"Topstep",p:[1,1,1,1,1,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"Weekly",payR:5,split:"90 / 10",splitN:90,price:"$49–109 one-time (50K)",offer:"",rep:"est",types:"1-step Combine",notes:"Since 2012, NFA-registered with own brokerage. $1,000 bonus at $10K profit. Only firm with ProjectX after Feb 2026 cutoff; acquired The Futures Desk. TopstepX runs on DXTrade/dxFeed.",src:"topstep.com"},
- {n:"Take Profit Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"On demand (~24h)",payR:2,split:"80–90%",splitN:90,price:"$170 (50K)",offer:"",rep:"est",types:"Eval / PRO / PRO+",notes:"$1,000 payout guarantee; processes within 24h once buffer cleared. Also CQG. EOD trailing drawdown.",src:"takeprofittrader.com"},
- {n:"MyFundedFutures",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~1 min (fastest); daily on Rapid",payR:1,split:"100% first $10K, then 90%",splitN:100,price:"$77 (50K)",offer:"",rep:"est",types:"Core / Rapid / Pro / Milestone",notes:"Up to $600K capital. One-step eval, no daily loss limit, 40% consistency rule, no swing trading. Direct dxFeed deal; also Quantower, ATAS. Cap is 5 sim-funded (10 accounts total incl. evaluations).",src:"help.myfundedfutures.com"},
- {n:"Tradeify",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Daily or 5-day (Select)",payR:2,split:"90%",splitN:90,price:"$103 one-time (Select 50K)",offer:"No activation fee",rep:"est",types:"Growth / Select / Lightning (instant)",notes:"Lowest total cost of funding among top firms. Lightning instant funding ($349–729). EOD drawdown, no activation fee. Tradovate + WealthCharts; Tradesea partner.",src:"help.tradeify.co"},
- {n:"Lucid Trading",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~15 min (fast)",payR:2,split:"100%",splitN:100,price:"Verify",offer:"",rep:"est",types:"LucidPro / LucidFlex / Instant",notes:"100% split. Also Sierra Chart, MotiveWave, Quantower, Bookmap. Tradesea partner. LucidX feed removed. Cap is 5 funded (10 total incl. evaluation accounts in reserve).",src:"support.lucidtrading.com"},
- {n:"Elite Trader Funding",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing + Static + EOD",asset:"Futures",pay:"After 8 active days",payR:4,split:"100%",splitN:100,price:"From ~$80/mo",offer:"",rep:"est",types:"Fast Track / Diamond / Static",notes:"100% profit retention during sim period. 12+ platforms via Rithmic.",src:"elitetraderfunding.com"},
- {n:"Bulenox",p:[1,0,1,0,0,0],max:"11",maxN:11,dd:"Trailing + EOD",asset:"Futures",pay:"Verify",payR:6,split:"100%",splitN:100,price:"$175 (50K)",offer:"",rep:"new",types:"Option 1 / Option 2",notes:"100% split. Tradovate not on official connection page. 21+ Rithmic-compatible platforms. Cap reported as 11 by one tracker, 3 by another — confirm current.",src:"bulenox.com"},
- {n:"TradeDay",p:[1,1,1,0,0,0],max:"6",maxN:6,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"80–95%",splitN:95,price:"Verify",offer:"30% off + no activation (NinjaTrader)",rep:"est",types:"1-step eval",notes:"Coaching support, zero commissions. Also TradingView, Jigsaw. TradeDayX discontinued.",src:"tradeday.com"},
- {n:"Alpha Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Standard / Advanced / Zero / Instant",notes:"AlphaTrader runs on Rithmic. Also WealthCharts, TradingView. AlphaTicks feed discontinued. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"alpha-futures.com"},
- {n:"Phidias Propfirm",p:[1,1,1,0,0,0],max:"15",maxN:15,dd:"Trailing / EOD",asset:"Futures",pay:"48 hrs eval-to-payout (fast)",payR:2,split:"80–90%",splitN:90,price:"$149 / $55 (50K)",offer:"80% off OTP accounts (NinjaTrader launch)",rep:"est",types:"Express / Fundamental / Premium",notes:"30% consistency rule (stricter than most). Bi-weekly/monthly payouts; faster for consistent traders. Also DeepCharts, TradingView.",src:"phidiaspropfirm.com"},
- {n:"FundedNext Futures",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"After 1 day",payR:3,split:"60–95%",splitN:95,price:"$159.99 (50K)",offer:"",rep:"est",types:"1-step",notes:"Scalable to $1.2M for consistent performers. News trading allowed. Via Tradovate/Rithmic.",src:"fundednext.com"},
+ {n:"Apex Trader Funding",p:[1,1,1,0,0,0],max:"20",maxN:20,dd:"Trailing (intraday)",asset:"Futures",pay:"On-demand per cycle (5 qual. days)",payR:3,split:"100% (ladder caps)",splitN:100,mp:"$1.5k–$3k /payout ladder",mpd:"Apex 4.0 (Mar 2026), 50K EOD ladder: $1,500 / $1,500 / $2,000 / $2,500 / $2,500 / $3,000 — $13,000 LIFETIME per PA, then the PA closes and leftover balance is forfeited. Each cycle needs 5 qualifying days ($250+/day on 50K), 50% consistency, safety net (drawdown+$100) for life. Re-eval to get a new PA.",price:"$167/mo (50K)",offer:"Frequent eval discounts",rep:"est",types:"1-step eval → PA",notes:"Largest firm by volume; $500M+ paid out; 17k+ Trustpilot reviews. $99 activation; platform locked at purchase. Up to 20 funded accounts.",src:"support.apextraderfunding.com"},
+ {n:"Topstep",p:[1,1,1,1,1,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"Per cycle: 5 winning days ($150+)",payR:3,split:"90 / 10 (from $1)",splitN:90,mp:"$2k /payout (50K)",mpd:"New accounts (Apr 28, 2026+): per-payout caps $2,000 (50K), $3,000 (100K), $5,000 (150K), or 50% of balance. 90/10 from dollar one (accounts after Jan 12, 2026). MLL resets to $0 after every payout — zero buffer until rebuilt. Live accounts unlock daily 100% payouts after 30 winning days.",price:"$49–109 one-time (50K)",offer:"",rep:"est",types:"1-step Combine",notes:"Since 2012, NFA-registered with own brokerage. $1,000 bonus at $10K profit. Only firm with ProjectX after Feb 2026 cutoff; acquired The Futures Desk. TopstepX runs on DXTrade/dxFeed.",src:"topstep.com"},
+ {n:"Take Profit Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"Daily on demand (~24h)",payR:1,split:"80–90%",splitN:90,mp:"$10k /day, then trading stops",mpd:"Advertised as uncapped above the buffer (= max drawdown; $52,000 balance on a 50K), but in practice capped at $10,000/day per account — hitting it stops trading on the account for the day (trader-reported). No payout windows or qualifying-day count. 80/20 on PRO, 90/10 on PRO+ (auto-promotion since Mar 2026). Min $250 ($50 fee at ≤$250). Buffer itself pays at 50%/80% on account close (60-trading-day rule).",price:"$170 (50K)",offer:"",rep:"est",types:"Eval / PRO / PRO+",notes:"$1,000 payout guarantee; processes within 24h once buffer cleared. Also CQG. EOD trailing drawdown.",src:"takeprofittrader.com"},
+ {n:"MyFundedFutures",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~1 min (fastest); daily on Rapid",payR:1,split:"100% first $10K, then 90%",splitN:100,mp:"Core: ~$1k /request (verify)",mpd:"Reported: Core plan $250 min / $1,000 max per request; Pro up to 60% of profits pre-buffer; Rapid = daily payouts. MFFU changes payout rules frequently — verify current terms per plan before counting on throughput.",price:"$77 (50K)",offer:"",rep:"est",types:"Core / Rapid / Pro / Milestone",notes:"Up to $600K capital. One-step eval, no daily loss limit, 40% consistency rule, no swing trading. Direct dxFeed deal; also Quantower, ATAS. Cap is 5 sim-funded (10 accounts total incl. evaluations).",src:"help.myfundedfutures.com"},
+ {n:"Tradeify",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Per 5-day cycle; Select Daily = daily",payR:2,split:"90%",splitN:90,mp:"$1.5k→ ladder (Growth 50K)",mpd:"Growth 50K: ladder caps from $1,500/payout, 6th+ up to $25,000/payout; Select Flex: 50% of total profits, capped $3,000/payout (50K); Select Daily: small frequent payouts above buffer; Lightning: $1,000 min with ladder caps. 90/10 split. 35% consistency (Growth/Select), 25–35% (Lightning).",price:"$103 one-time (Select 50K)",offer:"No activation fee",rep:"est",types:"Growth / Select / Lightning (instant)",notes:"Lowest total cost of funding among top firms. Lightning instant funding ($349–729). EOD drawdown, no activation fee. Tradovate + WealthCharts; Tradesea partner.",src:"help.tradeify.co"},
+ {n:"Lucid Trading",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"~15 min (fast)",payR:2,split:"90 / 10 (Mar 2026)",splitN:90,mp:"$1.5k–$4k /cycle (Flex)",mpd:"LucidFlex payout caps $1,500–$4,000 per cycle by account size (no consistency rule on Flex); LucidPro: 3-day payout cycles, 40% consistency; buffer = MLL + $100 at request. ~15-minute payout processing. Split upgraded 80/20 → 90/10 in March 2026.",price:"Verify",offer:"",rep:"est",types:"LucidPro / LucidFlex / Instant",notes:"90/10 split (upgraded Mar 2026). Also Sierra Chart, MotiveWave, Quantower, Bookmap. Tradesea partner. LucidX feed removed. Cap is 5 funded (10 total incl. evaluation accounts in reserve).",src:"support.lucidtrading.com"},
+ {n:"Elite Trader Funding",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing + Static + EOD",asset:"Futures",pay:"Weekly Wed (sim); daily (Live)",payR:4,split:"100%",splitN:100,mp:"$2k Cycle 1, rising",mpd:"Payout cycles with per-cycle maximums (Cycle 1 ≈ $2,000). Min $100 per request up to the cycle cap — but UNUSED cycle allowance is FORFEITED the moment you qualify for the next cycle, so drain each cycle fully. Safety net = drawdown + $100; 10–15 active trading days ($200+/day, and each active day must be ≥23% of your best day) per cycle; 40% consistency on pre-Aug-2024 accounts. Keep 100% of sim profits up to $25,000.",price:"From ~$80/mo",offer:"",rep:"est",types:"Fast Track / Diamond / Static",notes:"100% profit retention during sim period. 12+ platforms via Rithmic.",src:"elitetraderfunding.com"},
+ {n:"Bulenox",p:[1,0,1,0,0,0],max:"3 active (11 held)",maxN:3,dd:"Trailing + EOD",asset:"Futures",pay:"Weekly (submit Mon, paid ~Fri)",payR:4,split:"100%",splitN:100,mp:"$1.5k first 3 payouts (50K)",mpd:"Master Account: request any day, all processed Wednesdays. 10 trading days before first payout; min $1,000; caps on first three payouts only ($1,000 25K / $1,500 50K / $1,750 100K / $2,000 150K), then NO cap. 100% of first $10k per trader, then 90/10. 40% consistency; safety-threshold reserve must remain in the account. 3 Master Accounts ACTIVE max (11 held total).",price:"$175 (50K)",offer:"",rep:"new",types:"Option 1 / Option 2",notes:"100% split. Tradovate not on official connection page. 21+ Rithmic-compatible platforms. Official: 3 Master Accounts active at once, up to 11 held.",src:"bulenox.com"},
+ {n:"TradeDay",p:[1,1,1,0,0,0],max:"6",maxN:6,dd:"Trailing (EOD)",asset:"Futures",pay:"On demand from day 1 (~24h)",payR:2,split:"80→90→95% lifetime tiers",splitN:95,mp:"No cap above buffer",mpd:"Day-one payouts once the buffer (= start + max drawdown; $52,000 on 50K) clears at EOD settlement. $250 min, no frequency limits, requests pre-5:30PM CT process next business day. Split tiers by lifetime withdrawals: 80% to $50k, 90% to $100k, 95% beyond. Withdrawals dipping into the buffer zone split 50/50. Stop trading while a payout processes.",price:"Verify",offer:"30% off + no activation (NinjaTrader)",rep:"est",types:"1-step eval",notes:"Coaching support, zero commissions. Also TradingView, Jigsaw. TradeDayX discontinued.",src:"tradeday.com"},
+ {n:"Alpha Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Every 14 days (Std); gated (Adv/Prem)",payR:4,split:"90 / 10",splitN:90,mp:"$2k→$4k ladder (Prem 50K); $15k (Adv)",mpd:"Official help center: Premium 50K ladder $2,000 / $2,250 / $2,500 / $3,000 / $4,000 (5th+); min $500; no consistency, just positive net profit per cycle; up to 50% of profit per request. Advanced: min $1,000, max $15,000/request (industry-leading); 5 winning days ($200+) unlock 50% of profits, 30 winning days unlock 100%. Standard: every 14 days, 40% consistency, min $200, <48h processing, no buffer, MLL unaffected by payouts. Zero: 40% consistency, max $1,500 (50K). Trader receives 90% of each request. Alpha Prime Live: daily.",price:"Verify",offer:"",rep:"new",types:"Standard / Advanced / Zero / Instant",notes:"AlphaTrader runs on Rithmic. Also WealthCharts, TradingView. AlphaTicks feed discontinued. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"alpha-futures.com"},
+ {n:"Phidias Propfirm",p:[1,1,1,0,0,0],max:"15",maxN:15,dd:"Trailing / EOD",asset:"Futures",pay:"On-demand via Wallet; LIVE = daily",payR:2,split:"80% (→100% Premium)",splitN:100,mp:"Monthly caps (verify $)",mpd:"80/20 split; Premium climbs 75%→100% by the 5th payout. CASH accounts: bi-weekly request windows (1st–14th, 15th–end), 30% consistency, ~10 qualifying days ($150+/day on 50K) to first payout; monthly payout caps apply across all accounts (amounts not published — verify). LIVE: daily, uncapped, no consistency rule. 90% of payouts processed <30 min. Live review at 5 payouts or $100K cumulative. Up to 15 funded accounts.",price:"$149 / $55 (50K)",offer:"80% off OTP accounts (NinjaTrader launch)",rep:"est",types:"Express / Fundamental / Premium",notes:"30% consistency rule (stricter than most). Bi-weekly/monthly payouts; faster for consistent traders. Also DeepCharts, TradingView.",src:"phidiaspropfirm.com"},
+ {n:"FundedNext Futures",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD)",asset:"Futures",pay:"Legacy: per 5 benchmark days; Rapid: 3+ days",payR:3,split:"80% (90% add-on)",splitN:90,mp:"50% ≤ $6k /cycle (Legacy 50K)",mpd:"Official help center: Legacy — 5 benchmark days ($200+/day on 50K) per cycle; withdraw up to 50% of accumulated profit capped at $6,000 (50K) until 30 benchmark days, then uncapped; $500 new profit per cycle; min $250; no funded consistency rule. Rapid — no benchmark days, 40% consistency, cap ladder ~$800–$2,500/cycle until the 5th payout, then uncapped. Bolt — 5-payout LIFECYCLE, account closes after (max ~$12,500 total on 50K — Apex-style forfeiture). 24h processing guarantee (+$1,000 if missed); 3.5% processing fee; crypto/Rise rails.",price:"$159.99 (50K)",offer:"",rep:"est",types:"1-step",notes:"Scalable to $1.2M for consistent performers. News trading allowed. Via Tradovate/Rithmic.",src:"fundednext.com"},
  {n:"Earn2Trade",p:[1,1,1,0,0,0],max:"1",maxN:1,dd:"Trailing (Gauntlet)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"est",types:"Gauntlet Mini / Trader Career Path",notes:"~20 platforms (Finamark, Overcharts, etc.). Long-running education-focused firm. Limits traders to 1 funded account and prohibits copy trading — not usable for a copy fleet.",src:"earn2trade.com"},
- {n:"OneUp Trader",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval + Express",notes:"Runs on Rithmic; any Rithmic-compatible platform. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.oneuptrader.com"},
- {n:"Leeloo Trading",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Static & trailing evals",notes:"NT7 & NT8. Also Bookmap, MotiveWave, ATAS, Sierra Chart. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"leelootrading.com"},
- {n:"UProfit Trader",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing / EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval + Instant",notes:"Has a built-in trade copier — copy-friendly. TradingView supported. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"uprofit.com"},
- {n:"BluSky Trading",p:[1,1,1,0,0,1],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Efficient (verify)",payR:6,split:"Verify",splitN:null,price:"$160 (50K)",offer:"",rep:"new",types:"Eval / Instant / Direct-to-Funded",notes:"Low fees. Rithmic ecosystem (Quantower, Jigsaw, ATAS, Sierra, Bookmap). Tradesea partner. Trackers list 3–5 — confirm current.",src:"blusky.pro"},
- {n:"TickTick Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"$145 (50K)",offer:"",rep:"new",types:"Eval + TTTDirect (instant)",notes:"Broad platform compatibility. Rithmic temporarily unavailable on some evals — check current.",src:"futuresproptrading.com"},
+ {n:"OneUp Trader",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Same-day M–F above threshold",payR:2,split:"100% first $10k, then 90%",splitN:100,mp:"Crypto $3k /req; wire uncapped",mpd:"100% of first $10,000, then 90/10 above the withdrawal threshold (by account size, e.g. $3,500 on 100K). Requests M–F process same day. Crypto capped $3,000/request (1/week, 5% fee); bank wire for larger amounts. Ongoing obligations: weekly trade volume ≥ 50% of your evaluation average, flat around major news, 2-strike policy. Own-name copy trading EXPLICITLY ALLOWED; cross-name prohibited.",price:"Verify",offer:"",rep:"new",types:"Eval + Express",notes:"Runs on Rithmic; any Rithmic-compatible platform. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.oneuptrader.com"},
+ {n:"Leeloo Trading",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing + Static",asset:"Futures",pay:"MONTHLY — last Monday only",payR:6,split:"100% first $12.5k, then 90%",splitN:100,mp:"Investor: caps by size",mpd:"Slowest cadence in this directory: payout requests only on the LAST MONDAY of each month, processed that week via Rise. First payout requires 30 trading days; subsequent ones need 10 traded days in the month. 100% of first $12,500, then 90%. No trading from request until payout completes (pull the account from the copier). Accelerator: no caps; Investor: caps by account size.",price:"Verify",offer:"",rep:"new",types:"Static & trailing evals",notes:"NT7 & NT8. Also Bookmap, MotiveWave, ATAS, Sierra Chart. No Tradovate. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"leelootrading.com"},
+ {n:"UProfit Trader",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing / EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,mp:"100% above buffer (reported)",mpd:"Reported: 100% payout of profits above the buffer after a few weeks of trading; processing ~2–3 business days via Wise/bank/crypto. Has a BUILT-IN trade copier — explicitly copy-friendly. Per-cycle caps and eligibility specifics not published — verify.",price:"Verify",offer:"",rep:"new",types:"Eval + Instant",notes:"Has a built-in trade copier — copy-friendly. TradingView supported. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"uprofit.com"},
+ {n:"BluSky Trading",p:[1,1,1,0,0,1],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Daily from $250 (pre-11AM ET = same day)",payR:2,split:"Verify",splitN:null,mp:"$2.5k /rolling 7 days (50K)",mpd:"Official SFA rules: payouts daily from $250, processed same-day if requested before 11AM ET. Rolling 7-day payout caps: $1,500 (25K), $2,500 (50K), $3,000 (100K); statics $1.5k/$2.5k/$3k (150K/200K/300K) — max $9,000/week across 3 SFAs. Must trade $250+ profit with intent between requests. Trading halts at $5,000 profit/day and $10,000/week. At $10,000 cumulative profit per account: mandatory Support Review (up to 5 trading days; trading during review = forfeiture); max $10k/account (minus payouts, $30k/trader) transfers to Live Brokerage. Accounts must trade once every 30 days.",price:"$160 (50K)",offer:"",rep:"new",types:"Eval / Instant / Direct-to-Funded",notes:"Low fees. Rithmic ecosystem (Quantower, Jigsaw, ATAS, Sierra, Bookmap). Tradesea partner. Official cap: 3 Sim Funded Accounts per trader.",src:"blusky.pro"},
+ {n:"TickTick Trader",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"On request above threshold; Direct: 10-day cycles",payR:3,split:"100%→90/10 (Perf)",splitN:100,mp:"No cap; daily-consistency gated",mpd:"TTTPerformance: 100% split for the first 3 months, then 90/10; withdraw above the safety threshold ($2,600 on 50K) with $250 min; 30% daily consistency (no day >30% of total profit). TTTDirect: 80/20 from the start, higher thresholds, 20% daily consistency, mandatory 10-day trading period between payouts, 2% profit target per cycle. Payouts via Rise, up to 5 business days.",price:"$145 (50K)",offer:"",rep:"new",types:"Eval + TTTDirect (instant)",notes:"Broad platform compatibility. Rithmic temporarily unavailable on some evals — check current.",src:"futuresproptrading.com"},
  {n:"Top One Futures",p:[0,0,0,0,0,0],max:"3",maxN:3,dd:"EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"Eval + Instant",notes:"Migrated off ProjectX; current platform stack unconfirmed. Verify connectivity before relying on it. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"toponetrader.com"},
- {n:"Aqua Futures",p:[1,0,0,0,0,0],max:"3",maxN:3,dd:"EOD + Static",asset:"Futures",pay:"Bi-weekly (~7 days)",payR:4,split:"Up to 100%",splitN:100,price:"Verify",offer:"",rep:"new",types:"Beginner / Standard / Instant",notes:"Rithmic/CQG. Swing-friendly, static drawdown. UAE-based (serves US). Uses Quantower, Volumetrica. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.aquafutures.io"},
+ {n:"Aqua Futures",p:[1,0,0,0,0,0],max:"3",maxN:3,dd:"EOD + Static",asset:"Futures",pay:"Bi-weekly (~7 days)",payR:4,split:"Up to 100%",splitN:100,mp:"Verify",mpd:"Bi-weekly payouts reported (~7-day processing). May 2026: AquaFutures removed its same-owner copy-trading restriction — explicitly copy-friendly across accounts owned by the same person. Payout caps unpublished — verify.",price:"Verify",offer:"",rep:"new",types:"Beginner / Standard / Instant",notes:"Rithmic/CQG. Swing-friendly, static drawdown. UAE-based (serves US). Uses Quantower, Volumetrica. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.aquafutures.io"},
  {n:"FastTrack Trading",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Static (instant)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"Instant funding",notes:"CAUTION: community reputation / payout concerns — vet carefully before committing. Also Quantower. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"rithmic.com/ecosystem"},
- {n:"Goat Funded Futures",p:[0,1,1,0,0,0],max:"3",maxN:3,dd:"EOD + Static + Instant",asset:"Futures",pay:"5-day cycles",payR:4,split:"80%",splitN:80,price:"Verify",offer:"",rep:"new",types:"EOD Eval / Sprint / Instant / Pro",notes:"CQG-based. Verify copy/EA rules before relying on it. Also Quantower, Deepcharts. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.goatfundedfutures.com"},
+ {n:"Goat Funded Futures",p:[0,1,1,0,0,0],max:"3",maxN:3,dd:"EOD + Static + Instant",asset:"Futures",pay:"Per cycle: 7 winning days (0.2%/day)",payR:4,split:"80%",splitN:80,mp:"Per-cycle cap by size (verify $)",mpd:"Official FAQ: 7 winning days of ≥0.2% of initial balance each ($100/day on 50K) per payout cycle; each account size has a maximum reward per cycle (dollar amounts in dashboard — verify). Instant plans: every 5 winning days, 20% consistency, 7% first-cycle target, 10 profit days. Min $100–$250. Crypto capped $3,000/payout, Skrill $5,000, Rise uncapped.",price:"Verify",offer:"",rep:"new",types:"EOD Eval / Sprint / Instant / Pro",notes:"CQG-based. Verify copy/EA rules before relying on it. Also Quantower, Deepcharts. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"help.goatfundedfutures.com"},
  {n:"FXIFY Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD) + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step + Instant",notes:"Direct-to-Sim-Live option. Futures arm of FXIFY. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"fxifyfutures.com"},
- {n:"Legends Trading",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"$165 (50K)",offer:"",rep:"new",types:"Apprentice / Elite / Straight-to-Master",notes:"NinjaTrader works only via the Tradovate connection, NOT Rithmic. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"damnpropfirms.com"},
- {n:"E8 Futures",p:[0,1,0,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"E8 Signature Futures (single-phase)",notes:"CQG/Tradovate infrastructure — Tradovate is the only platform. Copying across own accounts allowed. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"helpfutures.e8markets.com"},
- {n:"The Trading Pit",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Static + Trailing",asset:"Multi-asset",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Scaling challenge to $5M",notes:"Tradovate/NinjaTrader on the Futures Prime tier. Copy up to 5. Also ATAS, Quantower, Volsys.",src:"support.thetradingpit.com"},
- {n:"Blue Guardian Futures",p:[0,1,0,1,0,0],max:"3",maxN:3,dd:"EOD + Instant",asset:"Futures",pay:"24h guarantee",payR:2,split:"90% (100% first $15K)",splitN:90,price:"Instant from $10 (5K)",offer:"",rep:"new",types:"1-step / Guardian / Instant",notes:"Guardian Shield tech; 24h payout guarantee or split upgraded to 100% on that withdrawal. Stack in flux post-ProjectX. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"blueguardian.com"},
+ {n:"Legends Trading",p:[1,1,1,0,0,0],max:"20 (5 Elite)",maxN:20,dd:"Trailing (EOD)",asset:"Futures",pay:"2×/month windows (1st–5th, 15th–20th)",payR:4,split:"90 / 10",splitN:90,mp:"$2k /cycle (50K, fixed)",mpd:"Elite Master per-cycle caps: $800 (25K) / $2,000 (50K) / $3,000 (100K) / $3,500 (150K) — fixed, they do not scale in later cycles. Buffer before withdrawals ($1,500 on 50K), 5 winning days + 40% consistency (Elite; 30% Apprentice/Master), min $1,000/withdrawal for the first 3 months. Live transition after 2nd payout keeps the 90/10.",price:"$165 (50K)",offer:"",rep:"new",types:"Apprentice / Elite / Straight-to-Master",notes:"NinjaTrader works only via the Tradovate connection, NOT Rithmic. Up to 20 total accounts; 5 Elite Master accounts per trader.",src:"damnpropfirms.com"},
+ {n:"E8 Futures",p:[0,1,0,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,mp:"Unpublished (verify)",mpd:"Tradovate-only infrastructure. Copying across your own accounts is allowed. Payout schedule, caps, and eligibility for E8 Futures (Signature single-phase) are not clearly published on the public help center — verify in the dashboard.",price:"Verify",offer:"",rep:"new",types:"E8 Signature Futures (single-phase)",notes:"CQG/Tradovate infrastructure — Tradovate is the only platform. Copying across own accounts allowed. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"helpfutures.e8markets.com"},
+ {n:"The Trading Pit",p:[1,1,1,1,0,0],max:"5",maxN:5,dd:"Static + Trailing",asset:"Multi-asset",pay:"Weekly after first payout (verify)",payR:4,split:"Verify",splitN:null,mp:"Verify",mpd:"Reported: $200/day across 5 profitable trading days required before the first payout, then weekly withdrawals while maintaining $200+ daily profits. Not verified against the firm's current help center — confirm before relying on it.",price:"Verify",offer:"",rep:"new",types:"Scaling challenge to $5M",notes:"Tradovate/NinjaTrader on the Futures Prime tier. Copy up to 5. Also ATAS, Quantower, Volsys.",src:"support.thetradingpit.com"},
+ {n:"Blue Guardian Futures",p:[0,1,0,1,0,0],max:"3",maxN:3,dd:"EOD + Instant",asset:"Futures",pay:"On demand above buffer; 48h guarantee",payR:2,split:"90% (100% first $15K)",splitN:90,mp:"50% above buffer (Pro); targets (Std)",mpd:"Official help center: 50K sim-funded requires $3,000 profit for payout 1, then +$2,000 per subsequent payout; the buffer must remain intact at all times. Pro plan: no profit targets — withdraw 50% of total profits above buffer any time. Rapid: first payout after 3 trading days. 100% of first $15K then 90%. 48-hour payout guarantee or +$1,000. Consistency 40%/30%/20% by plan. WARNING for copy fleets: funded accounts DEACTIVATE after 7 days of inactivity — keep the copier feeding it or lose the account.",price:"Instant from $10 (5K)",offer:"",rep:"new",types:"1-step / Guardian / Instant",notes:"Guardian Shield tech; 24h payout guarantee or split upgraded to 100% on that withdrawal. Stack in flux post-ProjectX. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"blueguardian.com"},
  {n:"Halcyon Trader Funding",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"Static (instant) + 1-step",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Instant + 1-step",notes:"Source conflict on Tradovate/NinjaTrader support — verify. Also Quantower, Volumetrica, TradingView. Tradesea partner. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"tradesea.ai/partnerships"},
  {n:"FundedSeat",p:[1,0,0,0,0,1],max:"5",maxN:5,dd:"EOD + Static + Instant",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"3× 1-step + 3× instant",notes:"Rithmic-native; no NinjaTrader/Tradovate. Tradesea partner. Separate CFD models exist. Supports Rithmic but PROHIBITS copy trading — not usable for a copy fleet.",src:"damnpropfirms.com"},
  {n:"EdgeProp",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"EOD",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval (EU/US)",notes:"Rithmic-based. Tradesea partner. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"edgeproptrading.com"},
- {n:"Onyx (onyx-futures.com)",p:[1,0,0,0,0,1],max:"10",maxN:10,dd:"EOD + Static",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"One-time-fee evals (EOD & Static)",notes:"Up to 10 accounts. TradingView charting. Tradesea partner. Distinct from DayTraders' separate 'Onyx' browser platform.",src:"onyx-futures.com"},
+ {n:"Onyx (onyx-futures.com)",p:[1,0,0,0,0,1],max:"10",maxN:10,dd:"EOD + Static",asset:"Futures",pay:"Weekly; <24h approval (or +$300)",payR:3,split:"Verify",splitN:null,mp:"Caps unpublished (verify)",mpd:"Weekly payouts with a sub-24-hour approval guarantee — the firm adds $300 if it misses the window. Per-cycle caps and minimums are not published on the public site; verify in the dashboard before counting on throughput.",price:"Verify",offer:"",rep:"new",types:"One-time-fee evals (EOD & Static)",notes:"Up to 10 accounts. TradingView charting. Tradesea partner. Distinct from DayTraders' separate 'Onyx' browser platform.",src:"onyx-futures.com"},
  {n:"FundYourEdge",p:[1,0,0,0,0,1],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Verify",notes:"Rithmic-based. Tradesea integration 'coming soon'. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"tradesea.ai/partnerships"},
  {n:"Funded Futures Network",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Trailing (EOD)",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval",notes:"Free FundX (Quantower) & EdgeProX (MotiveWave). Rithmic/NinjaTrader. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"damnpropfirms.com"},
- {n:"DayTraders",p:[1,0,1,0,0,0],max:"15",maxN:15,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"100%",splitN:100,price:"$49 (50K)",offer:"",rep:"new",types:"Eval",notes:"100% split. Trades via its own 'Onyx' browser platform on Rithmic.",src:"daytraders.com"},
- {n:"Hola Prime",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"1-hour payouts",payR:1,split:"Up to 95%",splitN:95,price:"Verify",offer:"20% off — code BENZINGA20",rep:"new",types:"Multi-stage funding",notes:"No subscription or activation fee. $3M+ in payouts. Verify current futures platform list. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"holaprime.com"},
+ {n:"DayTraders",p:[1,0,1,0,0,0],max:"15",maxN:15,dd:"Verify",asset:"Futures",pay:"Same-day if pre-5PM ET; 8 QDays/cycle",payR:4,split:"100%",splitN:100,mp:"$2k /request (50K)",mpd:"Official help center: Pro accounts need 8 qualifying days ($200+/day on 50K) between requests; max per request $1,000 (25K) / $2,000 (50K) / $3,000 (100K) / $3,500 (150K) / $5,000 (300K); min $500 in $500 increments; balance must be ≥$52,600 to request and stay ≥$52,000 after (50K). S2F: 10 QDays + declining profit targets between payouts, $2,000/request max (50K). 100% simulated split. ~1% of sim traders transition to live.",price:"$49 (50K)",offer:"",rep:"new",types:"Eval",notes:"100% split. Trades via its own 'Onyx' browser platform on Rithmic.",src:"daytraders.com"},
+ {n:"Hola Prime",p:[1,0,1,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"1-hour payouts",payR:1,split:"Up to 95%",splitN:95,mp:"Caps unpublished (verify)",mpd:"Markets a 1-hour payout processing guarantee; up to 95% split; no subscription/activation fees. Futures side recently launched Tradovate + NinjaTrader with new rules (2% risk limit on some accounts, adjusted trailing drawdowns). Per-cycle caps and eligibility gates for futures accounts are not clearly published — verify before relying on throughput.",price:"Verify",offer:"20% off — code BENZINGA20",rep:"new",types:"Multi-stage funding",notes:"No subscription or activation fee. $3M+ in payouts. Verify current futures platform list. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"holaprime.com"},
  {n:"FunderPro Futures",p:[1,1,1,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval",notes:"Rithmic is the mandatory execution layer. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"funderprofutures.com"},
  {n:"The5ers Futures",p:[0,0,0,1,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"Eval",notes:"dxFeed-powered futures arm. Known forex brand expanding to futures. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"vettedpropfirms.com"},
  {n:"Funded Futures Family",p:[0,1,1,0,0,0],max:"4",maxN:4,dd:"EOD + Intraday Trailing",asset:"Futures",pay:"Verify",payR:6,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"caution",types:"6 plans + Straight-to-Funded",notes:"Dallas-based, 2024. NO bots/algos allowed — verify copy-trading is permitted before fleet use. Up to ~$600K across 4 accounts. TradingView via Tradovate.",src:"fundedfuturesfamily.com"},
  {n:"PropEd Capital",p:[0,0,0,0,0,0],max:"3",maxN:3,dd:"Verify",asset:"Futures",pay:"Weekly",payR:5,split:"Verify",splitN:null,price:"Verify",offer:"55% off — code FT",rep:"caution",types:"Proprietary Nexus platform",notes:"Runs its OWN 'Nexus' platform — support for the six standard connectable platforms is unconfirmed. New (domain registered Sept 2025). No-automation concern for copy fleets. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"propedcapital.com"},
- {n:"TradersLaunch",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"End of Day (EOD)",asset:"Futures",pay:"Same-day / daily",payR:2,split:"Verify",splitN:null,price:"Verify",offer:"",rep:"new",types:"1-step eval; live-funded path",notes:"US, 2024. Same-day payouts, no payout caps once funded, no funded consistency rule. Up to ~$200K. Newer brand. Also TradingView.",src:"traderslaunch.com"},
+ {n:"TradersLaunch",p:[1,1,1,0,0,0],max:"5",maxN:5,dd:"End of Day (EOD)",asset:"Futures",pay:"Same-day / daily",payR:2,split:"Verify",splitN:null,mp:"No caps once funded (reported)",mpd:"Reported: same-day/daily payouts, NO payout caps once funded, and no funded consistency rule — unusually clean extraction profile for a newer firm if it holds. Not yet verified against an official help center; confirm rules and processing history before weighting it heavily.",price:"Verify",offer:"",rep:"new",types:"1-step eval; live-funded path",notes:"US, 2024. Same-day payouts, no payout caps once funded, no funded consistency rule. Up to ~$200K. Newer brand. Also TradingView.",src:"traderslaunch.com"},
  {n:"4PropTrader",p:[1,0,1,1,0,0],max:"3",maxN:3,dd:"EOD / EOD Trailing",asset:"Futures + CFD",pay:"Verify",payR:6,split:"95% (100% first $8K)",splitN:95,price:"Verify",offer:"",rep:"caution",types:"1-step / 2-step ($10K–$250K)",notes:"Dubai-based. Rithmic R|Trader Pro + dxFeed + free ATAS. CAUTION: notable payout-rejection complaints (Trustpilot/FPA) — vet carefully. Max accounts not firm-published; 3 is the industry-typical futures cap.",src:"4proptrader.com"}
 ];
 
@@ -425,11 +471,13 @@ function card(f){
     <div class="cstats">
       <div class="cstat"><div class="l">Payout speed</div><div class="d sm">${f.pay}</div></div>
       <div class="cstat"><div class="l">Profit split</div><div class="d sm">${f.split}</div></div>
+      <div class="cstat"><div class="l">Max payout</div><div class="d sm">${f.mp||"Verify"}</div></div>
       <div class="cstat"><div class="l">Max accounts</div><div class="d">${f.max}</div></div>
       <div class="cstat"><div class="l">Eval from</div><div class="d sm">${f.price}</div></div>
+      <div class="cstat"><div class="l">Drawdown</div><div class="d sm">${f.dd}</div></div>
     </div>
     <div class="ctags">
-      <span class="t">${f.dd}</span><span class="t">${f.asset}</span>
+      <span class="t">${f.asset}</span>
       ${f.offer?`<span class="t offer">★ ${f.offer}</span>`:''}
     </div>
     <div class="cfoot">
@@ -438,6 +486,7 @@ function card(f){
     </div>
     <div class="detail">
       <div class="drow"><div class="dl">Account / eval types</div><div class="dv">${f.types}</div></div>
+      ${f.mpd?`<div class="drow"><div class="dl">Payout structure (verified)</div><div class="dv">${f.mpd}</div></div>`:''}
       <div class="note">${f.notes}</div>
       <a class="src" href="https://${f.src.split('/')[0]}" target="_blank" rel="noopener">${f.src} ↗</a>
     </div>
@@ -489,36 +538,71 @@ document.getElementById('stat-cc').textContent=FIRMS.filter(ccOf).length;
 render();
 
 // ================= INCOME MODEL =================
-const M={perday:500,slip:15,uptime:90,days:20,accts:14,risk:250,cap:2};
+const M={perday:500,slip:15,uptime:90,days:20,accts:14,risk:250,cap:2,xcap:4000,split:90};
 const CEIL=240, MAXA=259;
+// Fleet mix: researched throughput per firm (50K accts, Jul 2026 research).
+// capMo = monthly extraction ceiling (null = uncapped), split = kept fraction,
+// life = lifetime cap per account (null = none), maxA = per-trader account cap.
+const MIX=[
+ {n:"Take Profit Trader", cad:"daily on demand",      capMo:null,  split:.80, life:null,  maxA:5,  a:5, note:"$10k/day halt; PRO+ → 90%"},
+ {n:"TradeDay",           cad:"daily on demand",      capMo:null,  split:.80, life:null,  maxA:6,  a:0, note:"tiers → 90/95%"},
+ {n:"Bulenox",            cad:"weekly (Wed)",         capMo:null,  split:.90, life:null,  maxA:3,  a:0, note:"$1.5k×3 ramp, then uncapped"},
+ {n:"Alpha (Advanced)",   cad:"winning-day gated",    capMo:null,  split:.90, life:null,  maxA:3,  a:0, note:"$15k/request cap"},
+ {n:"BluSky",             cad:"daily, 7d rolling cap",capMo:10000, split:.90, life:null,  maxA:3,  a:3, note:"$10k review gate"},
+ {n:"Lucid",              cad:"cycle (Pro: 3-day)",   capMo:8000,  split:.90, life:null,  maxA:5,  a:5, note:"Flex caps $1.5–4k/cycle"},
+ {n:"Topstep",            cad:"5 win-days /cycle",    capMo:6000,  split:.90, life:null,  maxA:5,  a:0, note:"$2k/payout (50K)"},
+ {n:"Alpha (Premium)",    cad:"per cycle",            capMo:6000,  split:.90, life:null,  maxA:3,  a:0, note:"$2k→$4k ladder"},
+ {n:"FundedNext (Legacy)",cad:"5 bench-days /cycle",  capMo:6000,  split:.80, life:null,  maxA:5,  a:0, note:"50% ≤$6k; 30d → uncapped"},
+ {n:"Blue Guardian",      cad:"on demand + targets",  capMo:6000,  split:.90, life:null,  maxA:3,  a:0, note:"7-day inactivity kill"},
+ {n:"Legends",            cad:"2 windows /mo",        capMo:4000,  split:.90, life:null,  maxA:20, a:0, note:"$2k/cycle — never scales"},
+ {n:"DayTraders",         cad:"8 QDays /cycle",       capMo:4000,  split:1.0, life:null,  maxA:15, a:0, note:"$2k/request"},
+ {n:"Elite",              cad:"weekly (Wed)",         capMo:4000,  split:1.0, life:null,  maxA:5,  a:0, note:"unused cycle $ forfeited"},
+ {n:"Goat",               cad:"7 win-days /cycle",    capMo:4000,  split:.80, life:null,  maxA:3,  a:0, note:"caps by size — verify"},
+ {n:"Apex",               cad:"5 qual-days /cycle",   capMo:4000,  split:1.0, life:13000, maxA:20, a:1, note:"$13k lifetime, PA closes"},
+ {n:"Leeloo",             cad:"MONTHLY (last Mon)",   capMo:null,  split:.90, life:null,  maxA:3,  a:0, note:"30 days to 1st payout"},
+ {n:"Other (blended)",    cad:"uses dials ←",     capMo:-1,    split:-1,  life:null,  maxA:99, a:0, note:""},
+];
 const set=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t;};
 const fmt=n=>'$'+Math.round(n).toLocaleString();
 const fmtNeg=n=>'−$'+Math.round(Math.abs(n)).toLocaleString();
 const fmtAx=n=>{n=Math.round(n);const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toFixed(1)+'M';if(a>=1e3)return '$'+Math.round(n/1e3)+'k';return '$'+n;};
 const saasFor=a=>a<=120?149:224;
 const effDay=()=>(M.perday-M.slip)*(M.uptime/100);
-const effMonth=()=>effDay()*M.days;
-const fleetNet=a=>effMonth()*a;
+const effMonth=()=>effDay()*M.days;                       // earned (paper) per acct/mo
+function firmCash(f){ // cash per account per month at firm f
+  const E=effMonth();
+  const cap=(f.capMo===-1)?M.xcap:(f.capMo??Infinity);
+  const sp=(f.split===-1)?(M.split/100):f.split;
+  return Math.min(E,cap)*sp;
+}
+const totalAccts=()=>MIX.reduce((s,f)=>s+f.a,0);
+const mixCash=()=>MIX.reduce((s,f)=>s+firmCash(f)*f.a,0);           // fleet cash/mo
+const blendCash=()=>{const t=totalAccts();return t?mixCash()/t:Math.min(effMonth(),M.xcap)*(M.split/100);}
+const cashMonth=()=>blendCash();
+const fleetPaper=a=>effMonth()*a;
+const fleetCash=a=>cashMonth()*a;
 const maxLossAcct=()=>M.risk*M.cap;
 
 const MILES=[[14,'Phase 1','Bootstrap'],[93,'Phase 2','Anchors'],[120,'Flex base',''],[240,'Flex ceiling',''],[259,'Full list','']];
 
 function drawChart(cur){
   const W=760,H=300,pl=62,pr=18,pt=18,pb=32,iw=W-pl-pr,ih=H-pt-pb;
-  const maxY=fleetNet(MAXA)||1;
+  const maxY=fleetPaper(MAXA)||1;
   const X=a=>pl+(a/MAXA)*iw, Y=v=>pt+ih-(v/maxY)*ih;
   let yt='';for(let i=0;i<=4;i++){const v=maxY*i/4,y=Y(v);yt+=`<line x1="${pl}" y1="${y.toFixed(1)}" x2="${W-pr}" y2="${y.toFixed(1)}" stroke="#EFE9DC"/><text x="${pl-8}" y="${(y+3).toFixed(1)}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">${fmtAx(v)}</text>`;}
   let xt='';[0,60,120,180,240,259].forEach(a=>{xt+=`<text x="${X(a).toFixed(1)}" y="${H-11}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">${a}</text>`;});
-  const area=`M ${X(1).toFixed(1)},${Y(0).toFixed(1)} L ${X(1).toFixed(1)},${Y(fleetNet(1)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(0).toFixed(1)} Z`;
-  const solid=`${X(1).toFixed(1)},${Y(fleetNet(1)).toFixed(1)} ${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)}`;
-  const dash=`${X(CEIL).toFixed(1)},${Y(fleetNet(CEIL)).toFixed(1)} ${X(MAXA).toFixed(1)},${Y(fleetNet(MAXA)).toFixed(1)}`;
+  const area=`M ${X(1).toFixed(1)},${Y(0).toFixed(1)} L ${X(1).toFixed(1)},${Y(fleetCash(1)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(fleetCash(CEIL)).toFixed(1)} L ${X(CEIL).toFixed(1)},${Y(0).toFixed(1)} Z`;
+  const solid=`${X(1).toFixed(1)},${Y(fleetCash(1)).toFixed(1)} ${X(CEIL).toFixed(1)},${Y(fleetCash(CEIL)).toFixed(1)}`;
+  const dash=`${X(CEIL).toFixed(1)},${Y(fleetCash(CEIL)).toFixed(1)} ${X(MAXA).toFixed(1)},${Y(fleetCash(MAXA)).toFixed(1)}`;
+  const paper=`${X(1).toFixed(1)},${Y(fleetPaper(1)).toFixed(1)} ${X(MAXA).toFixed(1)},${Y(fleetPaper(MAXA)).toFixed(1)}`;
   const g120=`<line x1="${X(120).toFixed(1)}" y1="${pt}" x2="${X(120).toFixed(1)}" y2="${pt+ih}" stroke="#9CA6B8" stroke-dasharray="3 3" opacity=".45"/>`;
   const g240=`<line x1="${X(CEIL).toFixed(1)}" y1="${pt}" x2="${X(CEIL).toFixed(1)}" y2="${pt+ih}" stroke="#B23C12" stroke-dasharray="3 3" opacity=".55"/>`;
-  const over=cur>CEIL, cx=X(cur), cy=Y(fleetNet(cur));
+  const over=cur>CEIL, cx=X(cur), cy=Y(fleetCash(cur));
   const lblX=Math.min(Math.max(cx,pl+30),W-pr-30);
-  const dot=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${over?'#9A6700':'#1F7A52'}" stroke="#fff" stroke-width="2"/><text x="${lblX.toFixed(1)}" y="${(cy-12).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0B1A30">${fmtAx(fleetNet(cur))}/mo</text>`;
-  document.getElementById('chart').innerHTML=`<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly net income versus number of funded accounts">
+  const dot=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="${over?'#9A6700':'#1F7A52'}" stroke="#fff" stroke-width="2"/><text x="${lblX.toFixed(1)}" y="${(cy-12).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0B1A30">${fmtAx(fleetCash(cur))}/mo cash</text>`;
+  document.getElementById('chart').innerHTML=`<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly cash extraction versus number of funded accounts, with paper P&L reference line">
     ${yt}<path d="${area}" fill="#E3F0E8"/>
+    <polyline points="${paper}" fill="none" stroke="#9CA6B8" stroke-width="1.5" stroke-dasharray="2 4"/>
     <polyline points="${solid}" fill="none" stroke="#1F7A52" stroke-width="2.5"/>
     <polyline points="${dash}" fill="none" stroke="#9A6700" stroke-width="2" stroke-dasharray="5 4"/>
     ${g120}${g240}${dot}${xt}</svg>`;
@@ -526,22 +610,50 @@ function drawChart(cur){
 function renderMiles(cur){
   let hot=MILES[0][0];for(const m of MILES){if(Math.abs(m[0]-cur)<Math.abs(hot-cur))hot=m[0];}
   document.getElementById('mtbody').innerHTML=MILES.map(([a,lbl,ph])=>{
-    const net=fleetNet(a)-saasFor(a), worst=maxLossAcct()*a, over=a>CEIL;
+    const net=fleetCash(a)-saasFor(a), worst=maxLossAcct()*a, over=a>CEIL;
     return `<tr class="${a===hot?'hot':''}"><td>${lbl} <span class="ph">${ph}</span></td><td>${a}${over?'*':''}</td><td>${fmt(net)}</td><td>${fmt(net*12)}</td><td class="loss">${fmtNeg(worst)}</td></tr>`;
   }).join('');
 }
-function recalc(){
-  const a=M.accts;
-  const gross=M.perday*a*M.days*(M.uptime/100);
-  const net=fleetNet(a), drag=gross-net, saas=saasFor(a), netAfter=net-saas, worst=maxLossAcct()*a;
-  set('o-month',fmt(netAfter)); set('o-month-sub',`${a} accounts · ${fmt(saas)}/mo platform`);
-  set('o-year',fmt(netAfter*12)); set('o-worst',fmtNeg(worst));
-  set('b-perday',fmt(effDay())); set('b-permonth',fmt(effMonth()));
-  set('b-gross',fmt(gross)); set('b-drag',fmtNeg(drag)); set('b-saas',fmtNeg(saas)); set('b-net',fmt(netAfter));
-  set('d-maxloss',fmtNeg(maxLossAcct())); set('d-fleetloss',fmtNeg(worst));
-  renderMiles(a); drawChart(a);
+function renderMix(){
+  const E=effMonth();
+  document.getElementById('mix-body').innerHTML=MIX.map((f,i)=>{
+    const cash=firmCash(f), fleet=cash*f.a;
+    const capTxt=(f.capMo===-1)?'dials':(f.capMo?('≈'+fmtAx(f.capMo)):'none');
+    const spTxt=(f.split===-1)?'dial':Math.round(f.split*100)+'%';
+    const burn=(f.life&&cash>0)?`<div class="life">⚠ ${(f.life/Math.min(E,f.capMo??Infinity)).toFixed(1)} mo → re-eval</div>`:'';
+    return `<tr${f.a>0?' class="hot"':''}><td>${f.n}<div class="cad">${f.note}</div>${burn}</td><td class="cad">${f.cad}</td><td>${capTxt}</td><td>${spTxt}</td>
+    <td><span class="step"><button data-mix="${i}" data-d="-1" aria-label="remove account">−</button><span class="n">${f.a}</span><button data-mix="${i}" data-d="1" aria-label="add account">+</button></span></td>
+    <td>${f.a?fmt(fleet):'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('mix-body').querySelectorAll('button[data-mix]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const f=MIX[+b.dataset.mix], d=+b.dataset.d;
+      f.a=Math.max(0,Math.min(f.maxA,f.a+d));
+      recalc();
+    });
+  });
+  const t=totalAccts();
+  document.getElementById('mix-total-lbl').textContent=`${t} accounts · ${fmt(mixCash())}/mo cash${t>CEIL?' · OVER 240 FLEX CAP':''}`;
 }
-[['r-perday','perday',v=>'$'+(+v).toLocaleString()],['r-slip','slip',v=>'$'+v],['r-uptime','uptime',v=>v+'%'],['r-days','days',v=>v],['r-accts','accts',v=>v],['r-risk','risk',v=>'$'+(+v).toLocaleString()],['r-cap','cap',v=>v]].forEach(([id,key,f])=>{
+function recalc(){
+  const a=totalAccts(); M.accts=a;
+  const E=effMonth(), cash=cashMonth();
+  const paper=fleetPaper(a), fleetC=mixCash(), saas=saasFor(a);
+  const trapped=Math.max(0,MIX.reduce((s,f)=>{const cap=(f.capMo===-1)?M.xcap:(f.capMo??Infinity);return s+Math.max(0,E-Math.min(E,cap))*f.a;},0));
+  const splitCost=paper-trapped-fleetC;
+  const netCash=fleetC-saas, worst=maxLossAcct()*a;
+  const eff=(E>0&&a>0)?cash/E:0;
+  set('v-accts',a+(a>CEIL?' ⚠':''));
+  set('o-day',fmt(M.days?netCash/M.days:0)); set('o-week',fmt(M.days?netCash/M.days*5:0));
+  set('o-month',fmt(netCash)); set('o-month-sub',`${a} accts · ${fmt(netCash*12)}/yr · paper ${fmt(paper)}/mo · platform ${fmt(saas)}/mo`);
+  set('o-worst',fmtNeg(worst));
+  set('b-perday',fmt(E)); set('b-permonth',fmt(cash));
+  set('b-gross',fmt(paper)); set('b-trap',fmtNeg(trapped)); set('b-drag',fmtNeg(splitCost)); set('b-saas',fmtNeg(saas)); set('b-net',fmt(netCash));
+  set('b-eff',Math.round(eff*100)+'%');
+  set('d-maxloss',fmtNeg(maxLossAcct())); set('d-fleetloss',fmtNeg(worst));
+  renderMix(); renderMiles(a||14); drawChart(Math.max(a,1));
+}
+[['r-perday','perday',v=>'$'+(+v).toLocaleString()],['r-slip','slip',v=>'$'+v],['r-uptime','uptime',v=>v+'%'],['r-days','days',v=>v],['r-xcap','xcap',v=>'$'+(+v).toLocaleString()],['r-split','split',v=>v+'%'],['r-risk','risk',v=>'$'+(+v).toLocaleString()],['r-cap','cap',v=>v]].forEach(([id,key,f])=>{
   const el=document.getElementById(id), out=document.getElementById('v-'+key);
   out.textContent=f(el.value);
   el.addEventListener('input',()=>{M[key]=+el.value;out.textContent=f(el.value);recalc();});
