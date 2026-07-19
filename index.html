@@ -217,6 +217,7 @@ svg.curve{width:100%;height:auto;display:block}
 <nav class="tabs" role="tablist">
   <button class="tab" data-tab="directory" role="tab" aria-selected="true">Directory</button>
   <button class="tab" data-tab="model" role="tab" aria-selected="false">Income Model</button>
+  <button class="tab" data-tab="challenge" role="tab" aria-selected="false">90-Day Challenge</button>
 </nav>
 
 <div id="view-directory">
@@ -290,8 +291,8 @@ svg.curve{width:100%;height:auto;display:block}
         <div class="dial"><div class="dtop"><span class="dname">Trading days / month</span><span class="dval" id="v-days">20</span></div><input type="range" id="r-days" min="10" max="23" step="1" value="20"><div class="drange"><span>10</span><span>23</span></div></div>
       </div>
       <div class="grp">
-        <div class="grp-h">Fleet size (from mix →)</div>
-        <div class="dial"><div class="dtop"><span class="dname">Funded accounts</span><span class="dval" id="v-accts">14</span></div><div class="drange"><span>set per firm in the Fleet Mix panel</span><span>240 Flex cap</span></div></div>
+        <div class="grp-h">Fleet size</div>
+        <div class="dial"><div class="dtop"><span class="dname">Funded accounts</span><span class="dval" id="v-accts">14</span></div><input type="range" id="r-accts" min="0" max="259" step="1" value="14"><div class="drange"><span>drag = auto-fill best firms first</span><span>240 Flex cap</span></div></div>
       </div>
       <div class="grp">
         <div class="grp-h">Payout reality</div>
@@ -365,6 +366,51 @@ svg.curve{width:100%;height:auto;display:block}
           </tbody>
         </table>
         <div class="mfoot">Set the extraction-cap dial to match your fleet mix: TPT-heavy → drag high ($10k/day cap almost never binds at normal pace); Apex-heavy → ~$3–4k and remember the $13k lifetime cap per PA (leftover profit is forfeited at close, then you re-eval). Cap/cycle figures are per account; every copied account has its own independent cycle.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="view-challenge" hidden>
+  <div class="model-hero">
+    <div class="hero-num alt"><div class="hl">The challenge</div><div class="hv" id="c-goal-total">—</div><div class="hs" id="c-goal-sub">—</div></div>
+    <div class="hero-num"><div class="hl">Each account must net</div><div class="hv" id="c-need">—</div><div class="hs">per trading session</div></div>
+    <div class="hero-num" id="c-verdict-card"><div class="hl">Verdict at your settings</div><div class="hv" id="c-verdict">—</div><div class="hs" id="c-verdict-sub">—</div></div>
+  </div>
+  <div class="model-wrap">
+    <div class="panel">
+      <h3>My challenge settings</h3>
+      <div class="grp">
+        <div class="grp-h">The commitment</div>
+        <div class="dial"><div class="dtop"><span class="dname">Accounts in my challenge</span><span class="dval" id="v-cn">5</span></div><input type="range" id="r-cn" min="1" max="30" step="1" value="5"><div class="drange"><span>1</span><span>30</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Daily cash goal</span><span class="dval" id="v-cgoal">$500</span></div><input type="range" id="r-cgoal" min="100" max="2000" step="50" value="500"><div class="drange"><span>$100</span><span>$2,000</span></div></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h">My expected performance</div>
+        <div class="dial"><div class="dtop"><span class="dname">Expected $/day per account</span><span class="dval" id="v-cexp">$500</span></div><input type="range" id="r-cexp" min="50" max="1500" step="25" value="500"><div class="drange"><span>$50</span><span>$1,500</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Copy slippage / acct / day</span><span class="dval" id="v-cslip">$15</span></div><input type="range" id="r-cslip" min="0" max="50" step="1" value="15"><div class="drange"><span>$0</span><span>$50</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Account uptime</span><span class="dval" id="v-cup">90%</span></div><input type="range" id="r-cup" min="50" max="100" step="1" value="90"><div class="drange"><span>50%</span><span>100%</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Split kept</span><span class="dval" id="v-csp">90%</span></div><input type="range" id="r-csp" min="50" max="100" step="5" value="90"><div class="drange"><span>50%</span><span>100%</span></div></div>
+        <div class="dial"><div class="dtop"><span class="dname">Buffer per account</span><span class="dval" id="v-cbuf">$2,000</span></div><input type="range" id="r-cbuf" min="0" max="4000" step="100" value="2000"><div class="drange"><span>$0</span><span>$4,000</span></div></div>
+      </div>
+      <div class="derived">
+        <div class="dr"><span class="k">Trading sessions in 90 days</span><span class="v" id="c-sess">—</span></div>
+        <div class="dr"><span class="k">Days until buffers filled</span><span class="v" id="c-bufdays">—</span></div>
+        <div class="dr"><span class="k">Buffer capital locked</span><span class="v" id="c-buflock">—</span></div>
+      </div>
+    </div>
+    <div class="model-main">
+      <div class="panel">
+        <div class="chl"><h3>90-day cash trajectory</h3><div class="chart-leg"><span style="color:var(--on)"><i>—</i> projected cash</span><span style="color:#C8922A"><i>─</i> goal pace</span><span style="color:#9CA6B8"><i>▒</i> buffer phase</span></div></div>
+        <div id="c-chart"></div>
+      </div>
+      <div class="panel">
+        <h3>Checkpoints</h3>
+        <table class="mtable">
+          <thead><tr><th>Day</th><th>Goal pace</th><th>Projected cash</th><th>vs goal</th></tr></thead>
+          <tbody id="c-check"></tbody>
+        </table>
+        <div class="mfoot" id="c-note">—</div>
       </div>
     </div>
   </div>
@@ -549,6 +595,7 @@ const MIX=[
  {n:"Take Profit Trader", cad:"daily on demand",      capMo:null,  split:.80, life:null,  maxA:5,  a:5, note:"$10k/day halt; PRO+ → 90%; buffer paid 50–80% at close"},
  {n:"TradeDay",           cad:"daily on demand",      capMo:null,  split:.80, life:null,  maxA:6,  a:0, note:"tiers → 90/95%"},
  {n:"Bulenox",            cad:"weekly (Wed)",         capMo:null,  split:.90, life:null,  maxA:3,  a:0, note:"$1.5k×3 ramp, then uncapped"},
+ {n:"Tradeify (Growth)", buf:2000, cad:"per 5-day cycle",     capMo:null,  split:.90, life:null,  maxA:5,  a:0, note:"$1.5k ladder → $25k+/payout by 6th (~6 wks)"},
  {n:"Alpha (Advanced)", buf:0,   cad:"winning-day gated",    capMo:null,  split:.90, life:null,  maxA:3,  a:0, note:"$15k/request; win-day gates, no buffer"},
  {n:"BluSky", buf:2000,             cad:"daily, 7d rolling cap",capMo:10000, split:.90, life:null,  maxA:3,  a:3, note:"$10k review gate"},
  {n:"Lucid", buf:2600,              cad:"cycle (Pro: 3-day)",   capMo:8000,  split:.90, life:null,  maxA:5,  a:5, note:"Flex caps $1.5–4k/cycle"},
@@ -654,6 +701,7 @@ function recalc(){
   const netCash=fleetC-saas, worst=maxLossAcct()*a;
   const eff=(E>0&&a>0)?cash/E:0;
   set('v-accts',a+(a>CEIL?' ⚠':''));
+  if(document.getElementById('r-accts')) document.getElementById('r-accts').value=Math.min(a,259);
   set('o-day',fmt(M.days?netCash/M.days:0)); set('o-week',fmt(M.days?netCash/M.days*5:0));
   set('o-month',fmt(netCash)); set('o-month-sub',`${a} accts · ${fmt(netCash*12)}/yr · paper ${fmt(paper)}/mo · platform ${fmt(saas)}/mo`);
   set('o-worst',fmtNeg(worst));
@@ -669,13 +717,88 @@ function recalc(){
   out.textContent=f(el.value);
   el.addEventListener('input',()=>{M[key]=+el.value;out.textContent=f(el.value);recalc();});
 });
+// Fleet-size slider: distributes accounts across MIX in table order (best throughput first)
+function distribute(n){
+  let left=n;
+  for(const f of MIX){ f.a=Math.min(f.maxA,left); left-=f.a; }
+  // dump any overflow into the last bucket (Other)
+  if(left>0) MIX[MIX.length-1].a=Math.min(MIX[MIX.length-1].maxA,MIX[MIX.length-1].a+left);
+}
+const accEl=document.getElementById('r-accts');
+accEl.addEventListener('input',()=>{ distribute(+accEl.value); recalc(); });
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
-  const m=t.dataset.tab==='model';
-  document.getElementById('view-directory').hidden=m;
-  document.getElementById('view-model').hidden=!m;
+  ['directory','model','challenge'].forEach(v=>{
+    document.getElementById('view-'+v).hidden=(v!==t.dataset.tab);
+  });
 }));
 recalc();
+
+// ================= 90-DAY CHALLENGE =================
+const C={n:5,goal:500,exp:500,slip:15,up:90,sp:90,buf:2000};
+const CD=90, SESS=Math.round(CD*5/7); // trading sessions in 90 calendar days
+function cCashDay(){ return Math.max(0,(C.exp-C.slip))*(C.up/100)*C.n; }          // earned/day fleet
+function cRecalc(){
+  const sess=SESS;
+  const goalTotal=C.goal*CD;                       // headline: $/day × 90 calendar days
+  const goalPerSess=goalTotal/sess;                // what that means per session
+  const needPerAcct=(goalPerSess/C.n)/(C.up/100)/(C.sp/100)+C.slip; // earned needed per acct/session
+  const earned=cCashDay();                          // fleet earned per session
+  const bufTotal=C.buf*C.n;
+  const bufSess=earned>0?bufTotal/earned:Infinity;  // sessions to fill buffers
+  const cashPerSess=earned*(C.sp/100);              // post-split extraction pace
+  const proj=Math.max(0,(sess-bufSess))*cashPerSess;
+  const pass=proj>=goalTotal;
+  set('c-goal-total',fmt(goalTotal));
+  set('c-goal-sub',`${fmt(C.goal)}/day × ${CD} days · ${C.n} accounts`);
+  set('c-need',fmt(needPerAcct));
+  set('c-verdict',pass?'ON TRACK':'SHORT');
+  set('c-verdict-sub',pass?`projected ${fmt(proj)} — surplus ${fmt(proj-goalTotal)}`:`projected ${fmt(proj)} — shortfall ${fmt(goalTotal-proj)}`);
+  const card=document.getElementById('c-verdict-card');
+  card.className='hero-num '+(pass?'alt':'dn');
+  set('c-sess',sess);
+  set('c-bufdays',isFinite(bufSess)?Math.ceil(bufSess)+' sessions':'—');
+  set('c-buflock',fmt(bufTotal));
+  // checkpoints
+  const rows=[30,60,90].map(d=>{
+    const s=d*5/7;
+    const g=C.goal*d;
+    const p=Math.max(0,(s-bufSess))*cashPerSess;
+    const diff=p-g;
+    return `<tr${d===90?' class="hot"':''}><td>Day ${d}</td><td>${fmt(g)}</td><td>${fmt(p)}</td><td class="${diff<0?'loss':''}">${diff>=0?'+':''}${fmt(Math.abs(diff)).replace('$',diff<0?'−$':'$')}</td></tr>`;
+  }).join('');
+  document.getElementById('c-check').innerHTML=rows;
+  set('c-note',`Needed per account: ${fmt(needPerAcct)} earned/session (${C.n} accts, after ${C.up}% uptime, ${C.sp}% split, ${fmt(C.slip)} slippage). Buffers eat the first ${isFinite(bufSess)?Math.ceil(bufSess):'—'} sessions before cash flows — the goal clock doesn't wait for them.`);
+  cChart(bufSess,cashPerSess,goalTotal);
+}
+function cChart(bufSess,cashPerSess,goalTotal){
+  const W=760,H=300,pl=62,pr=18,pt=18,pb=32,iw=W-pl-pr,ih=H-pt-pb;
+  const sess=SESS;
+  const maxY=Math.max(goalTotal,Math.max(0,(sess-bufSess))*cashPerSess)||1;
+  const X=s=>pl+(s/sess)*iw, Y=v=>pt+ih-(v/maxY)*ih;
+  let yt='';for(let i=0;i<=4;i++){const v=maxY*i/4,y=Y(v);yt+=`<line x1="${pl}" y1="${y.toFixed(1)}" x2="${W-pr}" y2="${y.toFixed(1)}" stroke="#EFE9DC"/><text x="${pl-8}" y="${(y+3).toFixed(1)}" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">${fmtAx(v)}</text>`;}
+  let xt='';[0,30,60,90].forEach(d=>{xt+=`<text x="${X(d*5/7).toFixed(1)}" y="${H-11}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#8A93A4">d${d}</text>`;});
+  const bufW=Math.min(bufSess,sess);
+  const shade=isFinite(bufW)&&bufW>0?`<rect x="${pl}" y="${pt}" width="${(X(bufW)-pl).toFixed(1)}" height="${ih}" fill="#F1ECE1" opacity=".6"/>`:'';
+  // projected polyline: 0 until bufSess, then linear
+  const pts=[];
+  for(let s=0;s<=sess;s+=2){
+    const v=Math.max(0,(s-bufSess))*cashPerSess;
+    pts.push(`${X(s).toFixed(1)},${Y(v).toFixed(1)}`);
+  }
+  const goal=`${X(0).toFixed(1)},${Y(0).toFixed(1)} ${X(sess).toFixed(1)},${Y(goalTotal).toFixed(1)}`;
+  document.getElementById('c-chart').innerHTML=`<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="Projected cumulative cash versus goal pace over 90 days">
+    ${shade}${yt}
+    <polyline points="${goal}" fill="none" stroke="#C8922A" stroke-width="1.8" stroke-dasharray="6 4"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="#1F7A52" stroke-width="2.5"/>
+    ${xt}</svg>`;
+}
+[['r-cn','n',v=>v],['r-cgoal','goal',v=>'$'+(+v).toLocaleString()],['r-cexp','exp',v=>'$'+(+v).toLocaleString()],['r-cslip','slip',v=>'$'+v],['r-cup','up',v=>v+'%'],['r-csp','sp',v=>v+'%'],['r-cbuf','buf',v=>'$'+(+v).toLocaleString()]].forEach(([id,key,f])=>{
+  const el=document.getElementById(id), out=document.getElementById('v-c'+({n:'n',goal:'goal',exp:'exp',slip:'slip',up:'up',sp:'sp',buf:'buf'}[key]));
+  out.textContent=f(el.value);
+  el.addEventListener('input',()=>{C[key]=+el.value;out.textContent=f(el.value);cRecalc();});
+});
+cRecalc();
 </script>
 </body>
 </html>
